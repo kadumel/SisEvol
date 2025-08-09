@@ -8,3 +8,6 @@ print(dados.count('.'))
 index = dados.rfind('.')
 
 print(dados[0:index])
+
+
+print("teste")
