@@ -1,0 +1,90 @@
+/* Remover backdrop dos modais */
+.modal-backdrop {
+  display: none !important;
+}
+
+.modal {
+  z-index: 1050 !important;
+}
+
+/* Permitir scroll do body quando modal estiver aberto */
+body.modal-open {
+  overflow: auto !important;
+  padding-right: 0 !important;
+}
+
+/* Prevenir scroll do body quando modal estiver aberto */
+body.modal-open {
+  padding-right: 0 !important;
+}
+
+/* Garantir que modais apareçam na frente */
+.modal.show {
+  z-index: 1055 !important;
+}
+
+/* Correção para modais aninhados */
+.modal .modal {
+  z-index: 1060 !important;
+}
+
+.modal .modal .modal-backdrop {
+  z-index: 1055 !important;
+}
+
+/* Estilo para modais grandes */
+.modal-xl .modal-dialog {
+  max-width: 95%;
+  width: 95%;
+}
+
+/* Melhorar visualização de tabelas em modais */
+.modal .table-responsive {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+/* Estado vazio para tabelas */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
+
+.empty-state h5 {
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+/* Filtros em modais */
+.filters-card {
+  background: rgba(248, 250, 252, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+/* Responsividade para modais */
+@media (max-width: 768px) {
+  .modal-xl .modal-dialog {
+    max-width: 98%;
+    width: 98%;
+    margin: 10px;
+  }
+  
+  .modal .table-responsive {
+    max-height: 300px;
+  }
+} 

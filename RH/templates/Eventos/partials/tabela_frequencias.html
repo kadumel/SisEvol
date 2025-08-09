@@ -1,0 +1,93 @@
+{% if frequencias %}
+<form id="form-frequencias-evento" style="display: flex; flex-direction: column; height: 100%;">
+<div class="table-responsive" style="flex: 1; overflow: auto;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0">
+            <i class="bi bi-calendar-check"></i> 
+            Controle de Frequência - {{ evento.descricao }}
+        </h6>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportarFrequencias({{ evento.id }})">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </button>
+        </div>
+    </div>
+    
+    <table class="table table-sm table-bordered table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th class="align-middle text-center" style="min-width: 200px;">Funcionário</th>
+                {% for dia in dias_tabela %}
+                <th class="text-center" style="min-width: 120px;">
+                    <div class="small">
+                        <strong>{{ dia.data }}</strong><br>
+                        {% if dia.hora_inicio or dia.hora_fim %}
+                        <small>{{ dia.hora_inicio|default:'' }} - {{ dia.hora_fim|default:'' }}</small>
+                        {% endif %}
+                    </div>
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for funcionario in frequencias %}
+            <tr>
+                <td>
+                    <div>
+                        <strong>{{ funcionario.funcionario_nome }}</strong>
+                        <br>
+                        <small class="text-muted">
+                            {{ funcionario.funcionario_matricula }} | 
+                            {{ funcionario.funcionario_cargo }} | 
+                            {{ funcionario.funcionario_lotacao }}
+                        </small>
+                    </div>
+                </td>
+                {% for frequencia in funcionario.frequencias %}
+                <td class="text-center">
+                    <select name="frequencia_status" class="form-select form-select-sm status-select" 
+                        data-inscricao-id="{{ funcionario.inscricao_id }}" 
+                        data-dia-evento-id="{{ frequencia.dia_evento_id }}">
+                        <option value="">Selecione...</option>
+                        <option value="P" {% if frequencia.status == 'P' %}selected{% endif %}>Presente</option>
+                        <option value="F" {% if frequencia.status == 'F' %}selected{% endif %}>Falta</option>
+                        <option value="J" {% if frequencia.status == 'J' %}selected{% endif %}>Justificada</option>
+                        <option value="A" {% if frequencia.status == 'A' %}selected{% endif %}>Atraso</option>
+                        <option value="S" {% if frequencia.status == 'S' %}selected{% endif %}>Saída antecipada</option>
+                    </select>
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="mt-3 d-flex justify-content-between align-items-center">
+    <div>
+        <small class="text-muted">
+            <strong>Legenda:</strong>
+            <span class="badge bg-success">PRESENTE</span>
+            <span class="badge bg-danger">FALTA</span>
+            <span class="badge bg-warning">JUSTIFICADA</span>
+            <span class="badge bg-info">ATRASO</span>
+            <span class="badge bg-secondary">SAÍDA_ANTECIPADA</span>
+        </small>
+    </div>
+    <button type="button" class="btn btn-primary" onclick="salvarFrequenciasEmLote({{ evento.id }})">
+        <i class="bi bi-save"></i> Salvar Frequências
+    </button>
+</div>
+
+<div class="mt-2">
+    <small class="text-muted">
+        Total: {{ total_inscritos }} funcionário(s) inscrito(s) em {{ total_dias }} dia(s) de evento
+    </small>
+</div>
+</form>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i>
+    Nenhum funcionário inscrito neste evento ou nenhum dia de evento cadastrado.
+</div>
+{% endif %} 

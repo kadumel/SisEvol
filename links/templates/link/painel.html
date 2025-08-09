@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block title %}BI - {{ frame.desc }}{% endblock %}
+
+{% block content %}
+<div class="iframe-container">
+    <div class="iframe-header">
+        <h3><i class="bi bi-graph-up"></i> {{ frame.desc }}</h3>
+        <div class="iframe-actions">
+            <button class="btn btn-primary btn-sm" onclick="toggleFullscreen()">
+                <i class="bi bi-arrows-fullscreen"></i> Tela Cheia
+            </button>
+            <a href="{% url 'indexLinks' %}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+    <div class="iframe-wrapper">
+        <iframe 
+            src="{{ frame.link }}" 
+            title="{{ frame.desc }}"
+            allowfullscreen
+            allow="fullscreen"
+            sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox"
+        ></iframe>
+    </div>
+</div>
+
+<style>
+.iframe-container {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.iframe-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.iframe-header h3 {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.iframe-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.iframe-wrapper {
+    position: relative;
+    width: 100%;
+    height: 70vh;
+    min-height: 500px;
+}
+
+.iframe-wrapper iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Modo tela cheia */
+.iframe-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    z-index: 99999;
+    border-radius: 0;
+}
+
+.iframe-container.fullscreen .iframe-wrapper {
+    height: calc(100vh - 80px);
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .iframe-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .iframe-wrapper {
+        height: 60vh;
+    }
+}
+</style>
+
+<script>
+function toggleFullscreen() {
+    const container = document.querySelector('.iframe-container');
+    const isFullscreen = container.classList.contains('fullscreen');
+    
+    if (isFullscreen) {
+        // Sair da tela cheia
+        container.classList.remove('fullscreen');
+        document.body.style.overflow = '';
+    } else {
+        // Entrar na tela cheia
+        container.classList.add('fullscreen');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Permitir sair da tela cheia com ESC
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const container = document.querySelector('.iframe-container');
+        if (container.classList.contains('fullscreen')) {
+            toggleFullscreen();
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="pagetitle">
+  <h1>Editar Empresa</h1>
+  
+  <br>
+  <section class="section">
+    <form method="POST">
+        {% csrf_token %}
+        <div class="row">
+            <div class="col-sm-8">
+                <label class="form-label">Razão Social</label>
+                {% render_field form.razao_social class="form-control" %}
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">CPF/CNPJ</label>
+                {% render_field form.cpf_cnpj class="form-control" %}
+            </div>
+            <div class="col-sm-8">
+                <label class="form-label">Endereço</label>
+                {% render_field form.endereco  class="form-control" %}
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">CEP</label>
+                {% render_field form.cep class="form-control" %}
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">Complemento</label>
+                {% render_field form.complemento class="form-control" %}
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">Bairro</label>
+                {% render_field form.bairro class="form-control" %}
+            </div>
+            <div class="col-sm-4">
+                <label class="form-label">Cidade</label>
+                {% render_field form.cidade class="form-control" list="cidadeList" %}
+                <datalist id="cidadeList"></datalist>
+            </div>
+            <div class="col-sm-6">
+                <label class="form-label">Email</label>
+                {% render_field form.email class="form-control" %}
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Telefone</label>
+                {% render_field form.telefone class="form-control" %}
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Celular</label>
+                {% render_field form.celular class="form-control" %}
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Mensagem Orçamento</label>
+                {% render_field form.orcamento_msg class="form-control"  %}
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Logo</label>
+                {% render_field form.imagem class="form-control"  %}
+            </div>
+            <div class="col-sm-3">
+                <label class="form-label">Status</label>
+                {% render_field form.status class="form-check-input"  %}
+            </div>
+        </div>
+        <br>
+        <button class="btn btn-primary" type="submit">Salvar</button>
+        <a href="{% url 'listFuncionario' %}" class="btn btn-secondary">Voltar</a>
+    </form>
+  </section>
+{% endblock %}
+{% block script %}
+<script>
+$(document).ready(function() {
+    let allCities = [];
+
+    // Função para carregar todas as cidades
+    function loadAllCities() {
+        $.ajax({
+            url: 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios',
+            method: 'GET',
+            success: function(response) {
+                console.log(response);  // Verifique a resposta no console
+                allCities = response;
+
+                // Preenche o datalist com todas as cidades
+                $('#cidadeList').empty();
+                allCities.forEach(function(cidade) {
+                    // Verifica se a estrutura do objeto está correta
+                    let estadoSigla = cidade.microrregiao && cidade.microrregiao.UF ? cidade.microrregiao.UF.sigla : 'N/A';
+                    $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+                });
+            },
+            error: function() {
+                alert('Erro ao carregar as cidades.');
+            }
+        });
+    }
+
+    // Carrega todas as cidades ao carregar a página
+    loadAllCities();
+
+    // Dispara a requisição à API ao digitar no input de cidade
+    $('#id_cidade').on('input', function() {
+        let query = $(this).val();  // Valor digitado pelo usuário
+        if (query.length >= 2) {  // Busca as cidades se houver 2 ou mais caracteres
+            // Filtra as cidades armazenadas
+            let filteredCities = allCities.filter(cidade => 
+                cidade.nome.toLowerCase().includes(query.toLowerCase())
+            );
+
+            // Limpa o datalist antes de adicionar novas opções
+            $('#cidadeList').empty();
+
+            // Adiciona as cidades filtradas como opções no datalist
+            filteredCities.forEach(function(cidade) {
+                // Verifica se a estrutura do objeto está correta
+                let estadoSigla = cidade.microrregiao.mesorregiao.UF.sigla && cidade.microrregiao.mesorregiao.UF.sigla ? cidade.microrregiao.mesorregiao.UF.sigla : 'N/A';
+                $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+            });
+        }
+    });
+
+    // Adiciona a funcionalidade de preencher o datalist com todas as cidades ao clicar no campo
+    $('#id_cidade').on('focus', function() {
+        // Verifica se o datalist já foi preenchido
+        if ($('#cidadeList').children().length === 0) {
+            allCities.forEach(function(cidade) {
+                // Verifica se a estrutura do objeto está correta
+                let estadoSigla = cidade.microrregiao.mesorregiao.UF.sigla && cidade.microrregiao.mesorregiao.UF.sigla ? cidade.microrregiao.mesorregiao.UF.sigla : 'N/A';
+                $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+            });
+        }
+    });
+});
+
+
+</script>
+{% endblock %}

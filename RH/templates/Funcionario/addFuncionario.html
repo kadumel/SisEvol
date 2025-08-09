@@ -1,0 +1,696 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+{% block content %}
+<div class="modern-header">
+  <div class="header-content">
+    <h1><i class="bi bi-person-plus-fill"></i> Adicionar Funcionário</h1>
+    <p class="header-subtitle">Cadastre um novo funcionário no sistema</p>
+  </div>
+</div>
+
+<div class="modern-container">
+  <form method="POST" class="modern-form">
+    {% csrf_token %}
+    
+    <!-- Card: Informações Básicas -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-person-badge"></i> Informações Básicas</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Empresa</label>
+              {% render_field form.empresa class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-1">
+            <div class="form-group">
+              <label class="form-label">Matrícula</label>
+              {% render_field form.matricula class="form-control modern-input" pattern="^\d+$" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Nome</label>
+              {% render_field form.nome class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Data de Admissão</label>
+              {% render_field form.dt_admissao class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Data de Demissão</label>
+              {% render_field form.dt_demissao class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Status</label>
+              {% render_field form.status class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Dados Pessoais -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-person-vcard"></i> Dados Pessoais</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Data de Nascimento</label>
+              {% render_field form.dt_nascimento class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">Sexo</label>
+              {% render_field form.sexo class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Naturalidade</label>
+              {% render_field form.naturalidade class="form-control modern-input" %}
+              <datalist id="cidadeList"></datalist>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="form-group">
+              <label class="form-label">RG</label>
+              {% render_field form.rg class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">CPF</label>
+              {% render_field form.cpf class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Informações Profissionais -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-briefcase"></i> Informações Profissionais</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Cargo</label>
+              {% render_field form.cargo class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Lotação</label>
+              {% render_field form.lotacao class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Tipo de Contrato</label>
+              {% render_field form.tipo_contrato class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Turno</label>
+              {% render_field form.turno class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Motivo da Contratação</label>
+              {% render_field form.motivo_contratacao class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" id="id_lb_pri_termino">Primeiro Término</label>
+              {% render_field form.dt_primeiro_termino class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label" id="id_lb_seg_termino">Segundo Término</label>
+              {% render_field form.dt_segundo_termino class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Datas Importantes -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-calendar-event"></i> Datas Importantes</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Data Contrato Exp.</label>
+              {% render_field form.dt_contrato_experiencia class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Data Último ASO</label>
+              {% render_field form.dt_ultimo_aso class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Data ASO Periódico</label>
+              {% render_field form.dt_aso_periodico class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Data de Integração</label>
+              {% render_field form.dt_integracao class="form-control modern-input" type="Date" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Contato -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-telephone"></i> Contato</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Telefone Fixo</label>
+              {% render_field form.fone_fixo class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Celular</label>
+              {% render_field form.fone_celular class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Folga</label>
+              {% render_field form.folga class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Benefícios -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-heart-pulse"></i> Benefícios</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Plano Saúde Titular</label>
+              {% render_field form.plano_saude_titular class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Plano Saúde Dependente</label>
+              {% render_field form.plano_saude_dependente class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Plano Odonto Titular</label>
+              {% render_field form.plano_odonto_titular class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Plano Odonto Dependente</label>
+              {% render_field form.plano_odonto_dependente class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+        <div class="row mt-3">
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Vale Transporte</label>
+              {% render_field form.vale_transporte class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Salário Família</label>
+              {% render_field form.salario_familia class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Dependentes</label>
+              {% render_field form.dependentes class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Card: Informações Financeiras -->
+    <div class="modern-card">
+      <div class="card-header">
+        <h3><i class="bi bi-currency-dollar"></i> Informações Financeiras</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Conta Bancária</label>
+              {% render_field form.conta_bancaria class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Salário Bruto</label>
+              {% render_field form.salario_fixo class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Salário Complementar</label>
+              {% render_field form.salario_compl class="form-control modern-input" %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label class="form-label">Ajuda de Custo</label>
+              {% render_field form.ajuda_custo class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botões de Ação -->
+    <div class="action-buttons">
+      <button class="btn btn-primary modern-btn" type="submit">
+        <i class="bi bi-check-circle"></i> Salvar Funcionário
+      </button>
+      <a href="{% url 'listFuncionario' %}" class="btn btn-secondary modern-btn">
+        <i class="bi bi-arrow-left"></i> Voltar
+      </a>
+    </div>
+  </form>
+</div>
+
+<style>
+/* Estilos específicos para a página de adicionar funcionário */
+.content-wrapper .modern-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem 0;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  border-radius: 16px;
+}
+
+.content-wrapper .header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.content-wrapper .header-content h1 {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.content-wrapper .header-subtitle {
+  margin: 0.5rem 0 0 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.content-wrapper .modern-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.content-wrapper .modern-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.content-wrapper .modern-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.content-wrapper .modern-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+}
+
+.content-wrapper .card-header {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  padding: 1rem 2rem;
+  border-bottom: none;
+}
+
+.content-wrapper .card-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.content-wrapper .card-body {
+  padding: 2rem;
+}
+
+.content-wrapper .form-group {
+  margin-bottom: 1.5rem;
+}
+
+.content-wrapper .form-label {
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 0.5rem;
+  display: block;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.content-wrapper .modern-input {
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: #f8fafc;
+}
+
+.content-wrapper .modern-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  background: white;
+  outline: none;
+}
+
+.content-wrapper .modern-input:hover {
+  border-color: #cbd5e0;
+  background: white;
+}
+
+.content-wrapper .action-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  padding: 2rem 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  margin-top: 2rem;
+}
+
+.content-wrapper .modern-btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  min-width: 180px;
+  justify-content: center;
+}
+
+.content-wrapper .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.content-wrapper .btn-primary:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.content-wrapper .btn-secondary {
+  background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+  color: #2d3748;
+}
+
+.content-wrapper .btn-secondary:hover {
+  background: linear-gradient(135deg, #9fdfdc 0%, #f5c4d1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(168, 237, 234, 0.3);
+}
+
+@media (max-width: 768px) {
+  .content-wrapper .header-content h1 {
+    font-size: 2rem;
+  }
+  
+  .content-wrapper .modern-container {
+    padding: 0 1rem;
+  }
+  
+  .content-wrapper .card-body {
+    padding: 1.5rem;
+  }
+  
+  .content-wrapper .action-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .content-wrapper .modern-btn {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 576px) {
+  .content-wrapper .header-content {
+    padding: 0 1rem;
+  }
+  
+  .content-wrapper .card-header {
+    padding: 1rem 1.5rem;
+  }
+  
+  .content-wrapper .card-body {
+    padding: 1rem;
+  }
+}
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie != '') {
+      var cookies = document.cookie.split(';');
+      for (var i = 0; i < cookies.length; i++) {
+        var cookie = jQuery.trim(cookies[i]);
+        // Does this cookie string begin with the name we want?
+        if (cookie.substring(0, name.length + 1) == (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  var csrftoken = getCookie('csrftoken');
+
+// Configurações gerais da empresa
+  var configGeral = "{{ configGeral|safe}}"
+  console.log(configGeral)
+  configGeral = configGeral.replace('<QuerySet ','')
+  configGeral = configGeral.replace('>','')
+  configGeral = configGeral.replaceAll("'","\"")
+  configGeral = JSON.parse(configGeral)
+
+$(document).ready(function() {
+    let allCities = [];
+
+    // Função para carregar todas as cidades
+    function loadAllCities() {
+        $.ajax({
+            url: 'https://servicodados.ibge.gov.br/api/v1/localidades/municipios',
+            method: 'GET',
+            success: function(response) {
+                console.log(response);  // Verifique a resposta no console
+                allCities = response;
+
+                // Preenche o datalist com todas as cidades
+                $('#cidadeList').empty();
+                allCities.forEach(function(cidade) {
+                    // Verifica se a estrutura do objeto está correta
+                    let estadoSigla = cidade.microrregiao && cidade.microrregiao.UF ? cidade.microrregiao.UF.sigla : 'N/A';
+                    $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+                });
+            },
+            error: function() {
+                alert('Erro ao carregar as cidades.');
+            }
+        });
+    }
+
+    // Carrega todas as cidades ao carregar a página
+    loadAllCities();
+
+    // Dispara a requisição à API ao digitar no input de cidade
+    $('#id_naturalidade').on('input', function() {
+        let query = $(this).val();  // Valor digitado pelo usuário
+        if (query.length >= 2) {  // Busca as cidades se houver 2 ou mais caracteres
+            // Filtra as cidades armazenadas
+            let filteredCities = allCities.filter(cidade => 
+                cidade.nome.toLowerCase().includes(query.toLowerCase())
+            );
+
+            // Limpa o datalist antes de adicionar novas opções
+            $('#cidadeList').empty();
+
+            // Adiciona as cidades filtradas como opções no datalist
+            filteredCities.forEach(function(cidade) {
+                // Verifica se a estrutura do objeto está correta
+                let estadoSigla = cidade.microrregiao.mesorregiao.UF.sigla && cidade.microrregiao.mesorregiao.UF.sigla ? cidade.microrregiao.mesorregiao.UF.sigla : 'N/A';
+                $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+            });
+        }
+    });
+
+    // Adiciona a funcionalidade de preencher o datalist com todas as cidades ao clicar no campo
+    $('#id_cidade').on('focus', function() {
+        // Verifica se o datalist já foi preenchido
+        if ($('#cidadeList').children().length === 0) {
+            allCities.forEach(function(cidade) {
+                // Verifica se a estrutura do objeto está correta
+                let estadoSigla = cidade.microrregiao.mesorregiao.UF.sigla && cidade.microrregiao.mesorregiao.UF.sigla ? cidade.microrregiao.mesorregiao.UF.sigla : 'N/A';
+                $('#cidadeList').append('<option value="' + cidade.nome + ' (' + estadoSigla + ')"></option>');
+            });
+        }
+    });
+
+    $('#id_dt_demissao').blur(function () {
+    if ( $(this).val()){
+        $('#id_status').val('D')
+    }else{
+        $('#id_status').val('A')
+    }
+    });
+
+    $('#id_status').blur(function () {
+        const dataAtual = new Date();
+        const dataFormatada = convertDate(dataAtual)
+        
+    if ( $(this).val() === 'D'){
+        $('#id_dt_demissao').val(dataFormatada)
+    }else{
+        $('#id_dt_demissao').val('')
+    }
+
+    });
+
+$("#id_matricula").mask("999999");
+$("#id_cpf").mask("999.999.999-99");
+$("#id_fone_fixo").mask("(99) 9 9999-9999");
+$("#id_fone_celular").mask("(99) 9 9999-9999");
+
+});
+
+function convertDate(data){
+
+    const dia = String(data.getDate()).padStart(2, '0');
+    const mes = String(data.getMonth() + 1).padStart(2, '0'); // Janeiro é 0
+    const ano = data.getFullYear();
+    const dataFormatada = `${ano}-${mes}-${dia}`;
+
+    return dataFormatada
+
+}
+
+$("#id_dt_admissao").focusout(function () {
+
+    var empId = $("#id_empresa").val()
+    var dtAdmissao = $("#id_dt_admissao").val()
+    var novaData
+
+    console.log(empId +' - '+ dtAdmissao )
+
+    if(empId == ''){
+        $("#id_empresa").focus()
+    }
+    else{
+
+        const config = configGeral.filter(x => x.empresa == empId)
+        console.log(config[0])
+        var dias_primeiro_termino_exp = config[0]["dias_primeiro_termino_exp"]
+        var dias_segundo_termino_exp = config[0]["dias_segundo_termino_exp"]
+        
+        if(dtAdmissao == ''){
+            novaData = new Date();
+        }else{
+            novaData = new Date(dtAdmissao);
+        }
+        // Criar uma cópia da data original
+        novaData.setDate(novaData.getDate() + dias_primeiro_termino_exp); // Adicionar os dias
+        const dataFormatada = convertDate(novaData)
+        console.log(dataFormatada)
+        var lb1 = $("#id_lb_pri_termino").text()
+        $("#id_lb_pri_termino").text(lb1+' ('+dias_primeiro_termino_exp+')')
+        $("#id_dt_primeiro_termino").val(dataFormatada)
+
+
+        novaData.setDate(novaData.getDate() + dias_segundo_termino_exp); // Adicionar os dias
+        const dataFormatada2 = convertDate(novaData)
+        var lb2 = $("#id_lb_seg_termino").text()
+        $("#id_lb_seg_termino").text(lb2+' ('+dias_segundo_termino_exp+')')
+        $("#id_dt_segundo_termino").val(dataFormatada2)
+    }
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="pagetitle">
+  <h1>Lista de Funcionários</h1>
+  <br>
+  <div>
+    <a href="{% url 'addFuncionario' %}" class="btn btn-primary">Adicionar</a>
+    <a href="#" class="btn btn-success" id="downloadExcel">Excel <i class="fa fa-file-excel-o"></i> </a>
+  </div>
+  <br>
+
+
+  <div class="container-fluid">
+    <div class="row justify-content-md-center">
+      <div class="col-md-auto">
+        <label class="form-label">Empresa</label>
+        <select class="custom-select" id="id_filter_empresa">
+          <option selected>Todos</option>
+          {% for emp in empresa %}
+          <option value="{{ emp.empresa }}">{{ emp.empresa }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <label class="form-label">Lotação</label>
+        <select class="custom-select" id="id_filter_lotacao">
+          <option selected>Todos</option>
+          {% for lot in lotacao %}
+          <option value="{{ lot.lotacao }}">{{ lot.lotacao }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <label class="form-label">Cargo</label>
+        <select class="custom-select" id="id_filter_cargo">
+          <option selected>Todos</option>
+          {% for car in cargo %}
+          <option value="{{ car.cargo }}">{{ car.cargo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <label class="form-label">Status</label>
+        <select class="custom-select" id="id_filter_status">
+          <option selected>Todos</option>
+          <option value="Ativo">Ativo</option>
+          <option value="Demitido">Demitido</option>
+          <option value="Afastado">Afastado</option>
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <label class="form-label">Filtros</label>
+        <select class="custom-select" id="id_filter_filtros">
+          <option selected>Todos</option>
+          <option value="1">Niver do mês</option>
+          <option value="2">Venc. Exp 1 (7 dias)</option>
+          <option value="3">Venc. Exp 2 (7 dias)</option>
+        </select>
+      </div>
+    </div>
+  <!-- </div> -->
+
+
+
+  <section class="section">
+    <div >
+     
+      <table  class="table-responsive display"  id="id_table_add">
+          <thead>
+            <tr>
+              <th scope="col">Empresa</th>
+              <th scope="col">Matrícula</th>
+              <th scope="col">Nome</th>
+              <th scope="col">Lotação</th>
+              <th scope="col">Cargo</th>
+              <th scope="col">Admissão</th>
+              <th scope="col">Data Nasc.</th>
+              <th scope="col">Data Exp. 1</th>
+              <th scope="col">Data Exp. 2</th>
+              <th scope="col">Status</th>
+              <th scope="col">Ações</th>
+
+            </tr>
+          </thead>
+          <tbody>
+              {% for func in funcionario %}
+            <tr>
+              <!-- <th scope="row">{{func.id}}</th> -->
+              <td>{{func.empresa}}</td>
+              <td>{{func.matricula}}</td>
+              <td>{{func.nome}}</td>
+              <td>{{func.lotacao}}</td>
+              <td>{{func.cargo}}</td>
+              <td>{{func.dt_admissao|date:"d/m/Y"}}</td>
+              <td>{{func.dt_nascimento|date:"d/m/Y"}}</td>
+              <td>{{func.dt_primeiro_termino|date:"d/m/Y"}}</td>
+              <td>{{func.dt_segundo_termino|date:"d/m/Y"}}</td>
+              {% if func.status == "D" %}
+                <td style="color: red" >Demitido</td>
+              {% elif func.status == "A" %}
+                <td style="color: green" >Ativo</td>
+              {% else  %}
+                <td style="color: rgb(4, 0, 255)" >Afastado</td>
+              {% endif %}
+              <td>
+                  <a href="{% url 'editFuncionario' func.id %} " class="btn btn-primary"><i class="bi bi-pencil-square"></i></a>
+                  <button onclick="deleteFuncionario(event, this)" class="btn btn-danger" data-funcionario-id="{{ func.id }}">
+                    <i class="bi bi-trash3-fill"></i>
+                  </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+  </div>
+  </section>
+  </div>
+  <!-- Modal de Confirmação de Deleção -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Deleção</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Você tem certeza que deseja deletar este funcionário?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteButton">Deletar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+{% endblock %}
+{% block script %}
+<script>
+// Função para abrir o modal de confirmação e armazenar o ID do fornecedor
+function deleteFuncionario(e, btn) {
+    e.preventDefault();
+
+    // Pega o ID do funcionario a partir do botão clicado
+    let funcionarioToDelete = $(btn).data('funcionario-id');
+
+    // Define a URL para a requisição de deleção
+    let deleteUrl = '/delFuncionario/' + funcionarioToDelete;
+
+    // Armazena o ID e URL no modal para usar ao confirmar a deleção
+    $('#confirmDeleteModal').data('funcionario-id', funcionarioToDelete);
+    $('#confirmDeleteModal').data('delete-url', deleteUrl);
+
+    // Exibe o modal de confirmação
+    $('#confirmDeleteModal').modal('show');
+}
+
+// Função para realmente deletar o funcionario após a confirmação no modal
+function confirmarDelecao() {
+    // Pega o ID e a URL armazenados no modal
+    let funcionarioId = $('#confirmDeleteModal').data('funcionario-id');
+    let deleteUrl = $('#confirmDeleteModal').data('delete-url');
+
+    // Faz a requisição Ajax para deletar o fornecedor
+    $.ajax({
+        url: deleteUrl,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',  // Inclui o token CSRF no cabeçalho
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                // Remove o cliente da lista ou atualize a página conforme necessário
+                $('#funcionario-' + funcionarioId).remove();
+                // Fecha o modal
+                $('#confirmDeleteModal').modal('hide');
+                window.location.reload();
+            }else if  (response.status === 'forbidden'){
+              alert(response.message);
+              $('#confirmDeleteModal').modal('hide');
+            }else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(response) {
+            alert('Erro: ' + response.message);
+        }
+    });
+}
+
+// Quando clicar no botão de confirmação dentro do modal
+$('#confirmDeleteButton').on('click', confirmarDelecao);
+
+
+$(document).ready(function() {
+
+        var table = $('#id_table_add').DataTable({
+            language: {
+                url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json", 
+            },
+            autoWidth: true,
+            pageLength: 10,         // Número de linhas por página
+            lengthMenu: [5, 10, 25, 50], // Opções de paginação
+            responsive: true,        // Ajuste para telas menores
+            // columnDefs: [
+            //       {targets: 0, width: "300px"}
+            // ]
+        });
+
+        
+    });
+
+
+    $.fn.dataTable.ext.search.push(
+              function (settings, data, dataIndex) {
+                  var empresa = $('#id_filter_empresa').val()
+                  var lotacao = $('#id_filter_lotacao').val()
+                  var cargo =   $('#id_filter_cargo').val()
+                  var status =   $('#id_filter_status').val()
+                  var filtros = $("#id_filter_filtros").val()
+                  var dataAtual = new Date()
+                  var DataSeteDias = new Date()
+                  DataSeteDias.setDate(DataSeteDias.getDate() - 7)
+                  
+                  dtExp1 = new Date(data[7].substring(6,10)+'-'+data[7].substring(3,5)+'-'+data[7].substring(0,2))
+                  dtExp2 = new Date(data[8].substring(6,10)+'-'+data[8].substring(3,5)+'-'+data[8].substring(0,2))
+                  DataSeteDias = new Date( DataSeteDias.toISOString().split("T")[0])
+                  
+                  console.log('Data Exp1 - ' + dtExp1)
+                  console.log('Data Exp2 - ' + dtExp2)
+                  console.log('DataSeteDias - ' + DataSeteDias)
+                  console.log('dataAtual - ' + dataAtual)
+
+                  if (empresa != 'Todos' || lotacao != 'Todos' || cargo != 'Todos' || status != 'Todos' || filtros != 'Todos') {
+                       if ( 
+                            (empresa === 'Todos' || data[0] === empresa) && 
+                            (lotacao === 'Todos' || data[3] === lotacao ) && 
+                            (cargo === 'Todos' || data[4] === cargo ) &&
+                            (status === 'Todos' || data[9] === status ) &&
+                            (filtros === 'Todos' || 
+                                   (filtros == 1 && parseInt(data[6].substring(3,5)) === dataAtual.getMonth()+1) ||
+                                   (filtros == 2 && dtExp1 >= DataSeteDias  && dtExp1 <= dataAtual) || 
+                                   (filtros == 3 && dtExp2 >= DataSeteDias  && dtExp2 <= dataAtual)  
+                            )
+                       )
+                        {
+                            return true;
+                        }else{ 
+                          return false;
+                        }
+                  }else{
+                    return true
+                  }
+
+              }
+          );
+
+
+
+
+$('#id_filter_empresa, #id_filter_lotacao, #id_filter_cargo, #id_filter_status, #id_filter_filtros').on('keyup change', function () {
+  var table = $('#id_table_add').DataTable();
+  table.draw();
+});
+
+
+
+
+//Gera documento excel
+$("#downloadExcel").click(function(e){
+    e.preventDefault();
+
+    // Mostra indicador de carregamento
+    const btn = $(this);
+    const originalText = btn.html();
+    btn.html('<i class="bi bi-hourglass-split"></i>Gerando...');
+    btn.prop('disabled', true);
+
+    // Carrega as maquinas por setor
+    const url = "/ExportExcel/"
+    var empresa = $("#id_filter_empresa").val()
+    var lotacao = $("#id_filter_lotacao").val()
+    var cargo  = $("#id_filter_cargo").val() 
+    var status  = $("#id_filter_status").val()
+    
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: {"emp": empresa, "lot": lotacao, "car":cargo, "stt": status,  csrfmiddlewaretoken: '{{ csrf_token }}'},
+        xhrFields: {
+          responseType: "arraybuffer" // Configura para receber os dados como binário
+        },
+        success: function (data, sts, xhr) {
+            // Restaura o botão
+            btn.html(originalText);
+            btn.prop('disabled', false);
+
+            // Verifica se é um erro JSON
+            const contentType = xhr.getResponseHeader("Content-Type");
+            if (contentType && contentType.includes("application/json")) {
+                // Converte o arraybuffer para string para ler o erro
+                const decoder = new TextDecoder("utf-8");
+                const errorText = decoder.decode(data);
+                const errorData = JSON.parse(errorText);
+                
+                if (errorData.status === 'forbidden') {
+                    alert('Erro: ' + errorData.message);
+                } else {
+                    alert('Erro ao gerar o Excel: ' + errorData.message);
+                }
+                return;
+            }
+
+            // Criar um link para download do arquivo
+            const blob = new Blob([data], { type: xhr.getResponseHeader("Content-Type") });
+            const url = window.URL.createObjectURL(blob);
+
+            // Criar elemento de download
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "funcionarios.xlsx"; // Nome do arquivo
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            // Revogar o objeto URL
+            window.URL.revokeObjectURL(url);
+            
+            // Feedback de sucesso
+            alert('Arquivo Excel gerado com sucesso!');
+        }, 
+        error: function (xhr, sts, error) {
+            // Restaura o botão
+            btn.html(originalText);
+            btn.prop('disabled', false);
+            
+            console.error("Erro ao gerar o Excel:", error);
+            alert('Erro ao gerar o Excel. Verifique o console para mais detalhes.');
+        }
+    });
+});
+
+
+
+
+
+</script>
+{% endblock %}
+
+
+

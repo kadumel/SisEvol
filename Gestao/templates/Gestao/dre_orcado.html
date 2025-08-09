@@ -1,0 +1,1041 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load gestao_filters %}
+
+{% block title %}DRE Orçado{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- CSRF Token para AJAX -->
+  {% csrf_token %}
+  
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'gestao:orcamento_menu' %}">
+          <i class="bi bi-calculator"></i> Orçamento
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="bi bi-graph-up"></i> DRE Orçado
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Header da Página -->
+  <div class="page-header mb-4">
+    <div class="row align-items-center">
+      <div class="col">
+        <h1 class="page-title">
+          <i class="bi bi-graph-up text-primary"></i>
+          DRE Orçado
+        </h1>
+        <p class="text-muted mb-0">Visualize o DRE Orçado com filtros hierárquicos</p>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary me-2" onclick="salvarAlteracoes()" id="btnSalvar" style="display: none;">
+          <i class="bi bi-save"></i>
+          Salvar Alterações
+        </button>
+        <button class="btn btn-success" onclick="exportarExcel()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Exportar Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-funnel"></i>
+        Filtros
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" id="filtrosForm">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label">Ano</label>
+            <select class="form-select" name="ano" onchange="this.form.submit()">
+              {% for ano in anos %}
+              <option value="{{ ano }}" {% if filtros.ano == ano|stringformat:"s" %}selected{% endif %}>{{ ano }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label d-flex justify-content-between align-items-center">
+              Mês
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selecionarTodosMeses()" title="Selecionar Todos">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="desmarcarTodosMeses()" title="Desmarcar Todos">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
+              {% for mes in meses %}
+              <div class="form-check">
+                <input class="form-check-input mes-checkbox" type="checkbox" name="mes" value="{{ mes.valor }}" 
+                       id="mes_{{ mes.valor }}" 
+                       {% if mes.valor in filtros.mes %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="mes_{{ mes.valor }}">
+                  {{ mes.nome }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label d-flex justify-content-between align-items-center">
+              Empresa
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selecionarTodasEmpresas()" title="Selecionar Todas">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="desmarcarTodasEmpresas()" title="Desmarcar Todas">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
+              {% for empresa in empresas %}
+              <div class="form-check">
+                <input class="form-check-input empresa-checkbox" type="checkbox" name="empresa" value="{{ empresa.id }}" 
+                       id="empresa_{{ empresa.id }}" 
+                       {% if empresa.id|stringformat:"s" in filtros.empresa %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="empresa_{{ empresa.id }}">
+                  {{ empresa.empresa }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Busca Livre</label>
+            <input type="text" class="form-control" name="filtro_livre" value="{{ filtros.filtro_livre }}" 
+                   placeholder="Digite para buscar..." onchange="this.form.submit()">
+          </div>
+          <div class="col-md-1 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-secondary" onclick="limparFiltros()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabela Hierárquica DRE -->
+  <div class="card" id="tableContainer">
+    <div class="card-header">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+          <i class="bi bi-diagram-3"></i>
+          DRE Orçado - {{ filtros.ano }}{% if filtros.mes %} - {{ filtros.mes|month_name }}{% endif %}
+        </h5>
+        <div class="d-flex align-items-center">
+          <button class="btn btn-info me-2" onclick="toggleFullScreen()" id="btnFullScreen">
+            <i class="bi bi-arrows-fullscreen"></i>
+            Tela Cheia
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      
+      <div class="table-responsive" id="tableWrapper">
+        <table class="table table-hover" id="dreTable">
+          <thead class="table-dark">
+            <tr>
+              <th rowspan="2" style="min-width: 400px;">Estrutura DRE</th>
+              {% for data in datas_unicas %}
+              <th colspan="2" class="text-center" style="min-width: 180px;">{{ data|date:"M/Y" }}</th>
+              {% endfor %}
+              <th colspan="2" class="text-center" style="min-width: 200px;">Total</th>
+            </tr>
+            <tr>
+              {% for data in datas_unicas %}
+              <th class="text-center" style="min-width: 90px;">Orçado</th>
+              <th class="text-center" style="min-width: 90px;">AV (%)</th>
+              {% endfor %}
+              <th class="text-center" style="min-width: 100px;">Orçado</th>
+              <th class="text-center" style="min-width: 100px;">AV (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for dre in dres %}
+              {% with dre_data=dados_hierarquicos|get_item:dre.id %}
+              <!-- Nível DRE -->
+              <tr class="{% if dre.id == 4 or dre.id == 7 or dre.id == 9 or dre.id == 11 %}table-warning{% else %}table-primary{% endif %}">
+                <td>
+                  <div class="d-flex align-items-center">
+                    {% if dre.id != 4 and dre.id != 7 and dre.id != 9 and dre.id != 11 %}
+                    <button class="btn btn-sm btn-outline-primary me-2" onclick="toggleNivel('dre-{{ dre.id }}')">
+                      <i class="bi bi-chevron-down" id="icon-dre-{{ dre.id }}"></i>
+                    </button>
+                    {% else %}
+                    <div class="me-2" style="width: 28px;"></div>
+                    {% endif %}
+                    <strong>{{ dre.nivel }} - {{ dre.nome }}</strong>
+                    {% if dre.id == 4 or dre.id == 7 or dre.id == 9 or dre.id == 11 %}
+                    <span class="badge bg-warning text-dark ms-2">Somatório</span>
+                    {% endif %}
+                  </div>
+                </td>
+                {% for data in datas_unicas %}
+                <td class="text-end">
+                  {% with valor=dre_data.valores_por_data|get_item:data %}
+                  {% if valor %}
+                    {% if valor < 0 %}
+                      <strong class="text-danger">{{ valor|format_currency }}</strong>
+                    {% else %}
+                      <strong class="text-primary">{{ valor|format_currency }}</strong>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                  {% endwith %}
+                </td>
+                <td class="text-end">
+                  {% with av_valor=dre_data.av_por_data|get_item:data %}
+                  <small class="text-dark">{{ av_valor|format_percent }}</small>
+                  {% endwith %}
+                </td>
+                {% endfor %}
+                <td class="text-end">
+                  {% if dre_data.total < 0 %}
+                    <strong class="text-danger">{{ dre_data.total|format_currency }}</strong>
+                  {% else %}
+                    <strong class="text-primary">{{ dre_data.total|format_currency }}</strong>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <strong class="text-dark">{{ dre_data.av_total|format_percent }}</strong>
+                </td>
+              </tr>
+              
+                              <!-- Níveis 1 - apenas para DREs que não são somatórios -->
+              {% if dre.id != 4 and dre.id != 7 and dre.id != 9 and dre.id != 11 %}
+                {% for nivel1_nome, nivel1_data in dre_data.niveis1.items %}
+                <tr class="nivel-dre-{{ dre.id }} table-light" style="display: none;">
+                  <td>
+                    <div class="d-flex align-items-center" style="margin-left: 1.5rem;">
+                      <button class="btn btn-sm btn-outline-secondary me-2" onclick="toggleNivel('nivel1-{{ dre.id }}-{{ forloop.counter }}')">
+                        <i class="bi bi-chevron-down" id="icon-nivel1-{{ dre.id }}-{{ forloop.counter }}"></i>
+                      </button>
+                      <span class="fw-semibold">{{ nivel1_nome }}</span>
+                    </div>
+                  </td>
+                  {% for data in datas_unicas %}
+                  <td class="text-end">
+                    {% with valor=nivel1_data.valores_por_data|get_item:data %}
+                    {% if valor %}
+                      {% if valor < 0 %}
+                        <strong class="text-danger">{{ valor|format_currency }}</strong>
+                      {% else %}
+                        <strong class="text-secondary">{{ valor|format_currency }}</strong>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                    {% endwith %}
+                  </td>
+                  <td class="text-end">
+                    {% with av_valor=nivel1_data.av_por_data|get_item:data %}
+                    <small class="text-dark">{{ av_valor|format_percent }}</small>
+                    {% endwith %}
+                  </td>
+                  {% endfor %}
+                  <td class="text-end">
+                    {% if nivel1_data.total < 0 %}
+                      <strong class="text-danger">{{ nivel1_data.total|format_currency }}</strong>
+                    {% else %}
+                      <strong class="text-secondary">{{ nivel1_data.total|format_currency }}</strong>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <small class="text-dark">{{ nivel1_data.av_total|default:0|format_percent }}</small>
+                  </td>
+                </tr>
+                
+                <!-- Níveis 2 -->
+                {% for nivel2_nome, nivel2_data in nivel1_data.niveis2.items %}
+                <tr class="nivel-nivel1-{{ dre.id }}-{{ forloop.parentloop.counter }} table-light" style="display: none;">
+                  <td>
+                    <div class="d-flex align-items-center" style="margin-left: 3rem;">
+                      <button class="btn btn-sm btn-outline-info me-2" onclick="toggleNivel('nivel2-{{ dre.id }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}')">
+                        <i class="bi bi-chevron-down" id="icon-nivel2-{{ dre.id }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"></i>
+                      </button>
+                      <span class="fw-medium">{{ nivel2_nome }}</span>
+                    </div>
+                  </td>
+                  {% for data in datas_unicas %}
+                  <td class="text-end">
+                    {% with valor=nivel2_data.valores_por_data|get_item:data %}
+                    {% if valor %}
+                      {% if valor < 0 %}
+                        <strong class="text-danger">{{ valor|format_currency }}</strong>
+                      {% else %}
+                        <strong class="text-info">{{ valor|format_currency }}</strong>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                    {% endwith %}
+                  </td>
+                  <td class="text-end">
+                    {% with av_valor=nivel2_data.av_por_data|get_item:data %}
+                    <small class="text-dark">{{ av_valor|format_percent }}</small>
+                    {% endwith %}
+                  </td>
+                  {% endfor %}
+                  <td class="text-end">
+                    {% if nivel2_data.total < 0 %}
+                      <strong class="text-danger">{{ nivel2_data.total|format_currency }}</strong>
+                    {% else %}
+                      <strong class="text-info">{{ nivel2_data.total|format_currency }}</strong>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <small class="text-dark">{{ nivel2_data.av_total|default:0|format_percent }}</small>
+                  </td>
+                </tr>
+                
+                <!-- Níveis 3 -->
+                {% for nivel3_nome, nivel3_data in nivel2_data.niveis3.items %}
+                <tr class="nivel-nivel2-{{ dre.id }}-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }} table-light" style="display: none;">
+                  <td>
+                    <div class="d-flex align-items-center" style="margin-left: 4.5rem;">
+                      <button class="btn btn-sm btn-outline-warning me-2" onclick="toggleNivel('nivel3-{{ dre.id }}-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}')">
+                        <i class="bi bi-chevron-down" id="icon-nivel3-{{ dre.id }}-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }}-{{ forloop.counter }}"></i>
+                      </button>
+                      <span class="fw-medium">{{ nivel3_nome }}</span>
+                    </div>
+                  </td>
+                  {% for data in datas_unicas %}
+                  <td class="text-end">
+                    {% with valor=nivel3_data.valores_por_data|get_item:data %}
+                    {% if valor %}
+                      {% if valor < 0 %}
+                        <strong class="text-danger">{{ valor|format_currency }}</strong>
+                      {% else %}
+                        <strong class="text-warning">{{ valor|format_currency }}</strong>
+                      {% endif %}
+                    {% else %}
+                      <span class="text-muted">-</span>
+                    {% endif %}
+                    {% endwith %}
+                  </td>
+                  <td class="text-end">
+                    {% with av_valor=nivel3_data.av_por_data|get_item:data %}
+                    <small class="text-dark">{{ av_valor|format_percent }}</small>
+                    {% endwith %}
+                  </td>
+                  {% endfor %}
+                  <td class="text-end">
+                    {% if nivel3_data.valor < 0 %}
+                      <strong class="text-danger">{{ nivel3_data.valor|format_currency }}</strong>
+                    {% else %}
+                      <strong class="text-warning">{{ nivel3_data.valor|format_currency }}</strong>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <small class="text-dark">{{ nivel3_data.av_total|default:0|format_percent }}</small>
+                  </td>
+                </tr>
+                
+                                 <!-- Centros Resultado (Nível 4) -->
+                 {% for centro_resultado_nome, centro_resultado_data in nivel3_data.centros_resultado.items %}
+                 <tr class="nivel-nivel3-{{ dre.id }}-{{ forloop.parentloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.parentloop.counter }}-{{ forloop.parentloop.counter }} table-light" style="display: none;">
+                   <td>
+                     <div class="d-flex align-items-center" style="margin-left: 6rem;">
+                       <span class="text-muted">{{ centro_resultado_nome }}</span>
+                     </div>
+                   </td>
+                  {% for data in datas_unicas %}
+                  <td class="text-end">
+                    {% with valor=centro_resultado_data.valores_por_data|get_item:data %}
+                    {% with orcamento_id=centro_resultado_data.orcamento_ids|get_item:data %}
+                    {% if valor %}
+                      {% if valor < 0 %}
+                        <input type="text" 
+                               class="form-control form-control-sm text-end text-danger fw-bold input-valor" 
+                               value="{{ valor|format_currency }}" 
+                               data-orcamento-id="{{ orcamento_id }}"
+                               data-data="{{ data|date:'Y-m-d' }}"
+                               data-valor-original="{{ valor|format_currency }}"
+                               onchange="marcarAlteracao(this)">
+                      {% else %}
+                        <input type="text" 
+                               class="form-control form-control-sm text-end text-primary fw-bold input-valor" 
+                               value="{{ valor|format_currency }}" 
+                               data-orcamento-id="{{ orcamento_id }}"
+                               data-data="{{ data|date:'Y-m-d' }}"
+                               data-valor-original="{{ valor|format_currency }}"
+                               onchange="marcarAlteracao(this)">
+                      {% endif %}
+                    {% else %}
+                      <input type="text" 
+                             class="form-control form-control-sm text-end text-muted input-valor" 
+                             value="0,00" 
+                             data-orcamento-id="{{ orcamento_id }}"
+                             data-data="{{ data|date:'Y-m-d' }}"
+                             data-valor-original="0,00"
+                             onchange="marcarAlteracao(this)">
+                    {% endif %}
+                    {% endwith %}
+                    {% endwith %}
+                  </td>
+                  <td class="text-end">
+                    {% with av_valor=centro_resultado_data.av_por_data|get_item:data %}
+                    <small class="text-dark">{{ av_valor|format_percent }}</small>
+                    {% endwith %}
+                  </td>
+                  {% endfor %}
+                  <td class="text-end">
+                    {% if centro_resultado_data.valor < 0 %}
+                      <strong class="text-danger">{{ centro_resultado_data.valor|format_currency }}</strong>
+                    {% else %}
+                      <strong class="text-muted">{{ centro_resultado_data.valor|format_currency }}</strong>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <small class="text-dark">{{ centro_resultado_data.av_total|default:0|format_percent }}</small>
+                  </td>
+                </tr>
+                {% endfor %}
+                {% endfor %}
+                {% endfor %}
+                {% endfor %}
+              {% endif %}
+              {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.breadcrumb {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb-item a:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.table-responsive {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.table th {
+  position: sticky;
+  top: 0;
+  background-color: #212529;
+  color: white;
+  z-index: 10;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid #495057;
+}
+
+.table th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background-color: #212529;
+}
+
+.table td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: inherit;
+}
+
+.table td {
+  vertical-align: middle;
+  background-color: inherit;
+}
+
+/* Garantir que todas as células tenham o mesmo background da linha */
+.table tbody tr td {
+  background-color: inherit !important;
+}
+
+/* Garantir que a primeira coluna (Estrutura DRE) tenha o mesmo background das outras colunas */
+.table tbody tr.table-primary td {
+  background-color: rgba(248, 249, 250, 0.8) !important;
+}
+
+.table tbody tr.table-warning td {
+  background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+.table tbody tr.table-light td {
+  background-color: rgba(248, 249, 250, 0.5) !important;
+}
+
+/* Garantir que o hover seja aplicado em todas as células */
+.table tbody tr:hover td {
+  background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.table tbody tr.table-primary:hover td {
+  background-color: rgba(248, 249, 250, 0.9) !important;
+}
+
+.table tbody tr.table-warning:hover td {
+  background-color: rgba(255, 193, 7, 0.3) !important;
+}
+
+.table tbody tr.table-light:hover td {
+  background-color: rgba(248, 249, 250, 0.7) !important;
+}
+
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
+
+.table-primary {
+  background-color: rgba(248, 249, 250, 0.8) !important;
+}
+
+.table-warning {
+  background-color: rgba(255, 193, 7, 0.2) !important;
+}
+
+.table-light {
+  background-color: rgba(248, 249, 250, 0.5) !important;
+}
+
+/* Garantir consistência de cores para todas as linhas */
+.table tbody tr {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Full-screen styles */
+.fullscreen-mode {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  background-color: white !important;
+  z-index: 9999 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Ensure main element can contain fullscreen mode */
+.main.fullscreen-mode {
+  position: relative !important;
+  min-height: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* Ensure content-wrapper doesn't interfere with fullscreen */
+.main.fullscreen-mode .content-wrapper {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+}
+
+.fullscreen-mode .page-header,
+.fullscreen-mode .breadcrumb,
+.fullscreen-mode .card.mb-4 {
+  display: none !important;
+}
+
+.fullscreen-mode .card#tableContainer {
+  flex: 1 !important;
+  height: auto !important;
+  margin: 0 !important;
+  border-radius: 0.375rem !important;
+  position: relative !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.fullscreen-mode .card#tableContainer .card-body {
+  flex: 1 !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.fullscreen-mode .table-responsive#tableWrapper {
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: auto !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  box-sizing: border-box !important;
+}
+
+.fullscreen-mode .table#dreTable {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto !important;
+  overflow-x: auto !important;
+  box-sizing: border-box !important;
+}
+
+.fullscreen-mode .table th,
+.fullscreen-mode .table td {
+  max-width: none !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: auto !important;
+  word-wrap: break-word !important;
+  box-sizing: border-box !important;
+}
+
+.fullscreen-mode .table th:first-child,
+.fullscreen-mode .table td:first-child {
+  min-width: 200px !important;
+  max-width: 300px !important;
+  white-space: normal !important;
+}
+
+.fullscreen-mode .table th[style*="min-width"],
+.fullscreen-mode .table td[style*="min-width"] {
+  min-width: auto !important;
+  max-width: none !important;
+  width: auto !important;
+}
+
+/* Ensure the button is always visible in fullscreen mode */
+.fullscreen-mode .card-header .btn,
+.fullscreen-mode .card-header #btnFullScreen {
+  position: relative !important;
+  z-index: 10001 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-block !important;
+  background-color: #17a2b8 !important;
+  color: white !important;
+  border: 1px solid #17a2b8 !important;
+}
+
+/* Ensure the button container is visible */
+.fullscreen-mode .card-header .col-auto {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.badge {
+  font-size: 0.75rem;
+  padding: 0.375rem 0.5rem;
+}
+
+.text-end {
+  text-align: right !important;
+}
+
+.table td.text-end {
+  padding-right: 1rem;
+}
+
+.table th.text-center {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+   /* Melhorar espaçamento dos níveis hierárquicos */
+  .ms-4 {
+    margin-left: 1.5rem !important;
+  }
+  
+  .ms-5 {
+    margin-left: 3rem !important;
+  }
+  
+  /* Espaçamento específico para o nível 4 (Centro Resultado) */
+  .nivel-centro-resultado {
+    margin-left: 6rem !important;
+  }
+
+/* Estilo para valores zerados */
+.text-muted {
+  color: #6c757d !important;
+  font-style: italic;
+}
+ 
+ /* Estilos para inputs editáveis */
+ .form-control-sm {
+   font-size: 0.875rem;
+   padding: 0.25rem 0.5rem;
+   border: 1px solid #dee2e6;
+   border-radius: 0.25rem;
+   background-color: transparent;
+   transition: all 0.15s ease-in-out;
+ }
+ 
+ .form-control-sm:focus {
+   border-color: #86b7fe;
+   box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+   outline: 0;
+ }
+ 
+ .form-control-sm.is-loading {
+   background-color: #f8f9fa;
+   opacity: 0.7;
+   cursor: not-allowed;
+ }
+ 
+ .form-control-sm.text-danger {
+   color: #dc3545 !important;
+ }
+ 
+ .form-control-sm.text-primary {
+   color: #0d6efd !important;
+ }
+ 
+ .form-control-sm.text-muted {
+   color: #6c757d !important;
+ }
+  
+  /* Estilo para inputs modificados */
+  .form-control-sm.is-modified {
+    border-color: #ffc107;
+    box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    background-color: rgba(255, 193, 7, 0.1);
+  }
+  
+  /* Estilo para o botão de salvar */
+  #btnSalvar {
+    transition: all 0.3s ease;
+  }
+  
+  #btnSalvar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+</style>
+
+<script>
+function toggleNivel(nivelId) {
+  const elementos = document.querySelectorAll('.nivel-' + nivelId);
+  const icon = document.getElementById('icon-' + nivelId);
+  
+  elementos.forEach(elemento => {
+    if (elemento.style.display === 'none') {
+      elemento.style.display = 'table-row';
+      icon.className = 'bi bi-chevron-up';
+    } else {
+      elemento.style.display = 'none';
+      icon.className = 'bi bi-chevron-down';
+    }
+  });
+}
+
+function limparFiltros() {
+  window.location.href = window.location.pathname;
+}
+
+function exportarExcel() {
+  // Implementar exportação para Excel
+  alert('Funcionalidade de exportação será implementada em breve!');
+}
+
+// Expandir todos os níveis
+function expandirTodos() {
+  const botoes = document.querySelectorAll('[onclick^="toggleNivel"]');
+  botoes.forEach(botao => {
+    const nivelId = botao.getAttribute('onclick').match(/toggleNivel\('([^']+)'\)/)[1];
+    const elementos = document.querySelectorAll('.nivel-' + nivelId);
+    const icon = document.getElementById('icon-' + nivelId);
+    
+    elementos.forEach(elemento => {
+      elemento.style.display = 'table-row';
+      icon.className = 'bi bi-chevron-up';
+    });
+  });
+}
+
+// Recolher todos os níveis
+function recolherTodos() {
+  const botoes = document.querySelectorAll('[onclick^="toggleNivel"]');
+  botoes.forEach(botao => {
+    const nivelId = botao.getAttribute('onclick').match(/toggleNivel\('([^']+)'\)/)[1];
+    const elementos = document.querySelectorAll('.nivel-' + nivelId);
+    const icon = document.getElementById('icon-' + nivelId);
+    
+    elementos.forEach(elemento => {
+      elemento.style.display = 'none';
+      icon.className = 'bi bi-chevron-down';
+    });
+  });
+}
+ 
+ function marcarAlteracao(input) {
+        // Remover a classe 'is-loading' para permitir salvar
+        input.classList.remove('is-loading');
+        
+        // Obter o valor original do input
+        const valorOriginal = input.getAttribute('data-valor-original');
+        
+        // Obter o valor atual do input
+        let valorAtual = input.value;
+        
+        // Verificar se o valor atual é diferente do valor original
+        if (valorAtual !== valorOriginal) {
+            // Adicionar a classe 'is-modified' para indicar que o valor foi alterado
+            input.classList.add('is-modified');
+            // Mostrar o botão de salvar
+            document.getElementById('btnSalvar').style.display = 'block';
+            atualizarContadorAlteracoes();
+        } else {
+            // Remover a classe 'is-modified' se o valor não foi alterado
+            input.classList.remove('is-modified');
+            // Verificar se ainda há outros inputs modificados
+            const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+            if (inputsModificados.length === 0) {
+                // Ocultar o botão de salvar se não houver alterações
+                document.getElementById('btnSalvar').style.display = 'none';
+            } else {
+                atualizarContadorAlteracoes();
+            }
+        }
+    }
+    
+    function atualizarContadorAlteracoes() {
+        const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+        const btnSalvar = document.getElementById('btnSalvar');
+        
+        if (inputsModificados.length > 0) {
+            btnSalvar.innerHTML = `<i class="bi bi-save"></i> Salvar Alterações (${inputsModificados.length})`;
+        } else {
+            btnSalvar.innerHTML = `<i class="bi bi-save"></i> Salvar Alterações`;
+        }
+    }
+
+function salvarAlteracoes() {
+  const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+  const valoresParaSalvar = [];
+
+  inputsModificados.forEach(input => {
+    const orcamentoId = input.getAttribute('data-orcamento-id');
+    const data = input.getAttribute('data-data');
+    const valor = input.value;
+
+    // Remover pontos de milhar e substituir vírgula por ponto
+    const valorParaSalvar = valor.replace(/\./g, '').replace(',', '.');
+
+    valoresParaSalvar.push({
+      orcamento_id: orcamentoId,
+      valor: parseFloat(valorParaSalvar),
+      data: data
+    });
+  });
+
+  if (valoresParaSalvar.length === 0) {
+    alert('Nenhuma alteração para salvar.');
+    return;
+  }
+
+  // Confirmação antes de salvar
+  if (!confirm(`Deseja salvar ${valoresParaSalvar.length} alteração(ões)?`)) {
+    return;
+  }
+
+  // Mostrar indicador de carregamento
+  const btnSalvar = document.getElementById('btnSalvar');
+  const textoOriginal = btnSalvar.innerHTML;
+  btnSalvar.innerHTML = '<i class="bi bi-hourglass-split"></i> Salvando...';
+  btnSalvar.disabled = true;
+
+  const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch('{% url "gestao:update_orcamento_valor" %}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken
+    },
+    body: JSON.stringify({
+      valores: valoresParaSalvar
+    })
+  })
+  .then(response => response.json())
+  .then(data => {
+    btnSalvar.disabled = false;
+    btnSalvar.innerHTML = textoOriginal;
+    
+    if (data.success) {
+      mostrarNotificacao('Alterações salvas com sucesso!', 'success');
+      // Recarregar a página após um breve delay
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } else {
+      mostrarNotificacao('Erro ao salvar alterações: ' + data.error, 'error');
+    }
+  })
+  .catch(error => {
+    btnSalvar.disabled = false;
+    btnSalvar.innerHTML = textoOriginal;
+    mostrarNotificacao('Erro ao salvar alterações: ' + error.message, 'error');
+  });
+}
+ 
+ function mostrarNotificacao(mensagem, tipo) {
+   // Criar notificação
+   const notificacao = document.createElement('div');
+   notificacao.className = `alert alert-${tipo === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+   notificacao.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+   notificacao.innerHTML = `
+     ${mensagem}
+     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+   `;
+   
+   document.body.appendChild(notificacao);
+   
+   // Remover após 3 segundos
+   setTimeout(() => {
+     if (notificacao.parentNode) {
+       notificacao.parentNode.removeChild(notificacao);
+     }
+   }, 3000);
+ }
+
+// Funções para múltipla escolha de meses
+function selecionarTodosMeses() {
+  const checkboxes = document.querySelectorAll('.mes-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  document.getElementById('filtrosForm').submit();
+}
+
+function desmarcarTodosMeses() {
+  const checkboxes = document.querySelectorAll('.mes-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  document.getElementById('filtrosForm').submit();
+}
+
+// Funções para múltipla escolha de empresas
+function selecionarTodasEmpresas() {
+  const checkboxes = document.querySelectorAll('.empresa-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  document.getElementById('filtrosForm').submit();
+}
+
+function desmarcarTodasEmpresas() {
+  const checkboxes = document.querySelectorAll('.empresa-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  document.getElementById('filtrosForm').submit();
+}
+
+// Função para limpar todos os filtros
+function limparFiltros() {
+  // Limpar checkboxes de meses
+  const mesCheckboxes = document.querySelectorAll('.mes-checkbox');
+  mesCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Limpar checkboxes de empresas
+  const empresaCheckboxes = document.querySelectorAll('.empresa-checkbox');
+  empresaCheckboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Limpar busca livre
+  const buscaLivre = document.querySelector('input[name="filtro_livre"]');
+  if (buscaLivre) {
+    buscaLivre.value = '';
+  }
+  
+  // Submeter o formulário
+  document.getElementById('filtrosForm').submit();
+}
+
+// Função para alternar modo tela cheia
+function toggleFullScreen() {
+  const mainElement = document.querySelector('.main');
+  const btnFullScreen = document.getElementById('btnFullScreen');
+  
+  if (mainElement.classList.contains('fullscreen-mode')) {
+    // Sair do modo tela cheia
+    mainElement.classList.remove('fullscreen-mode');
+    btnFullScreen.innerHTML = '<i class="bi bi-arrows-fullscreen"></i> Tela Cheia';
+    btnFullScreen.classList.remove('btn-warning');
+    btnFullScreen.classList.add('btn-info');
+  } else {
+    // Entrar no modo tela cheia
+    mainElement.classList.add('fullscreen-mode');
+    btnFullScreen.innerHTML = '<i class="bi bi-arrows-angle-contract"></i> Sair da Tela Cheia';
+    btnFullScreen.classList.remove('btn-info');
+    btnFullScreen.classList.add('btn-warning');
+    
+    // Garantir que o botão seja visível
+    btnFullScreen.style.display = 'inline-block';
+    btnFullScreen.style.visibility = 'visible';
+    btnFullScreen.style.opacity = '1';
+    btnFullScreen.style.zIndex = '10001';
+  }
+}
+</script>
+{% endblock %}

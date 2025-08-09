@@ -1,0 +1,170 @@
+/* Modern Submenu Styles */
+:root {
+  --submenu-bg: #1a1f36;
+  --submenu-hover: rgba(255, 255, 255, 0.1);
+  --submenu-active: #4154f1;
+  --submenu-text: rgba(255, 255, 255, 0.8);
+  --submenu-text-hover: #fff;
+  --submenu-icon: rgba(255, 255, 255, 0.6);
+  --submenu-icon-hover: #fff;
+  --submenu-border: rgba(255, 255, 255, 0.1);
+}
+
+/* Submenu Container */
+.nav-content {
+  background: rgba(255, 255, 255, 0.05);
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--submenu-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-content.collapse {
+  display: none;
+}
+
+.nav-content.collapse.show {
+  display: block;
+}
+
+.nav-content li {
+  margin: 4px 0;
+}
+
+/* Submenu Items */
+.nav-content a {
+  padding: 12px 16px;
+  color: var(--submenu-text);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-weight: 500;
+  margin: 0 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-content a i {
+  font-size: 16px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: var(--submenu-hover);
+  color: var(--submenu-icon);
+  transition: all 0.3s ease;
+}
+
+.nav-content a:hover {
+  background: var(--submenu-hover);
+  color: var(--submenu-text-hover);
+  transform: translateX(4px);
+}
+
+.nav-content a:hover i {
+  background: var(--submenu-active);
+  color: var(--submenu-text-hover);
+  transform: scale(1.1);
+}
+
+.nav-content a.active {
+  background: var(--submenu-active);
+  color: var(--submenu-text-hover);
+  box-shadow: 0 4px 12px rgba(65, 84, 241, 0.3);
+}
+
+.nav-content a.active i {
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--submenu-text-hover);
+}
+
+/* Parent Menu Item */
+.nav-link[data-bs-toggle="collapse"] {
+  position: relative;
+  padding: 12px 20px;
+  font-weight: 600;
+  color: var(--submenu-text);
+  background: transparent;
+  border-radius: 8px;
+  margin: 4px 0;
+  transition: all 0.3s ease;
+}
+
+.nav-link[data-bs-toggle="collapse"]:hover {
+  background: var(--submenu-hover);
+  color: var(--submenu-text-hover);
+}
+
+.nav-link[data-bs-toggle="collapse"] i:first-child {
+  font-size: 18px;
+  margin-right: 12px;
+  color: var(--submenu-icon);
+  transition: all 0.3s ease;
+}
+
+.nav-link[data-bs-toggle="collapse"]:hover i:first-child {
+  color: var(--submenu-text-hover);
+  transform: scale(1.1);
+}
+
+.nav-link[data-bs-toggle="collapse"] .bi-chevron-down {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.3s ease;
+  font-size: 14px;
+  color: var(--submenu-icon);
+}
+
+.nav-link[data-bs-toggle="collapse"]:not(.collapsed) {
+  background: var(--submenu-hover);
+  color: var(--submenu-text-hover);
+}
+
+.nav-link[data-bs-toggle="collapse"]:not(.collapsed) .bi-chevron-down {
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--submenu-text-hover);
+}
+
+/* Active State Indicator */
+.nav-content a.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 16px;
+  background: var(--submenu-text-hover);
+  border-radius: 2px;
+}
+
+/* Ripple Effect */
+.nav-content a::after {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform .5s, opacity 1s;
+}
+
+.nav-content a:active::after {
+  transform: scale(0, 0);
+  opacity: .3;
+  transition: 0s;
+} 

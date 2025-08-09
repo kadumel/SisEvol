@@ -1,0 +1,192 @@
+/* Estilos para edição inline do campo valor */
+.editavel {
+    cursor: pointer !important;
+    transition: background-color 0.2s ease;
+}
+
+.editavel:hover {
+    background-color: #f8f9fa !important;
+}
+
+.editavel:active {
+    background-color: #e9ecef !important;
+}
+
+.valor-input {
+    width: 100px !important;
+    border: 2px solid #007cba !important;
+    border-radius: 3px !important;
+    padding: 2px 4px !important;
+    font-size: 14px !important;
+    text-align: right !important;
+}
+
+.valor-input:focus {
+    outline: none !important;
+    border-color: #0056b3 !important;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+}
+
+.valor-salvo {
+    background-color: #d4edda !important;
+    transition: background-color 0.5s ease;
+}
+
+.valor-erro {
+    background-color: #f8d7da !important;
+    border: 1px solid #f5c6cb !important;
+}
+
+/* Tooltip para indicar que é editável */
+.editavel::after {
+    content: "✏️";
+    font-size: 12px;
+    margin-left: 5px;
+    opacity: 0.6;
+}
+
+.editavel:hover::after {
+    opacity: 1;
+}
+
+/* Estilos para tabela hierárquica */
+.table th {
+    position: sticky;
+    top: 0;
+    background-color: #f8f9fa;
+    z-index: 10;
+    border: 1px solid #dee2e6;
+}
+
+.table td:first-child {
+    position: sticky;
+    left: 0;
+    background-color: inherit;
+    z-index: 5;
+    border-right: 2px solid #dee2e6;
+}
+
+/* Estilos para inputs de valores */
+.form-control-sm {
+    font-size: 0.875rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.2rem;
+    border: 1px solid #ced4da;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.form-control-sm:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.form-control-sm.is-loading {
+    background-color: #f8f9fa;
+    opacity: 0.7;
+}
+
+.form-control-sm.is-modified {
+    border-color: #ffc107;
+    background-color: #fff3cd;
+}
+
+/* Estilos para botão salvar */
+#btnSalvar {
+    transition: all 0.3s ease;
+}
+
+#btnSalvar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para linhas da tabela */
+.table tbody tr {
+    background-color: #ffffff;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.table tbody tr:hover {
+    background-color: #e9ecef;
+}
+
+/* Estilos para linhas específicas */
+.table-primary {
+    background-color: #e3f2fd !important;
+}
+
+.table-warning {
+    background-color: #fff3cd !important;
+}
+
+.table-light {
+    background-color: #f8f9fa !important;
+}
+
+/* Estilos para células da tabela */
+.table td {
+    background-color: inherit;
+}
+
+.table tbody tr td {
+    background-color: inherit !important;
+}
+
+/* Estilos para células em linhas específicas */
+.table-primary td {
+    background-color: #e3f2fd !important;
+}
+
+.table-warning td {
+    background-color: #fff3cd !important;
+}
+
+.table-light td {
+    background-color: #f8f9fa !important;
+}
+
+/* Estilos para hover em linhas específicas */
+.table tbody tr:hover td {
+    background-color: #e9ecef !important;
+}
+
+.table-primary:hover td {
+    background-color: #d1ecf1 !important;
+}
+
+.table-warning:hover td {
+    background-color: #ffeaa7 !important;
+}
+
+.table-light:hover td {
+    background-color: #e9ecef !important;
+}
+
+/* Estilos para linhas ocultas */
+.nivel-dre-*,
+.nivel-nivel1-*,
+.nivel-nivel2-*,
+.nivel-nivel3-* {
+    background-color: inherit !important;
+}
+
+.nivel-dre-*:hover td,
+.nivel-nivel1-*:hover td,
+.nivel-nivel2-*:hover td,
+.nivel-nivel3-*:hover td {
+    background-color: #e9ecef !important;
+}
+
+/* Espaçamento específico para o nível 4 (Centro Resultado) */
+.nivel-centro-resultado {
+    margin-left: 6rem !important;
+}
+
+/* Classe ms-6 para Bootstrap (não existe por padrão) */
+.ms-6 {
+    margin-left: 4.5rem !important;
+} 

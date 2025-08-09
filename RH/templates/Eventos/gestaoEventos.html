@@ -1,0 +1,1798 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Eventos{% endblock %}
+
+{% block content %}
+<style>
+  /* Estilos modernos para a página de eventos */
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+
+  .page-subtitle {
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+    font-weight: 400;
+  }
+
+  .action-btn {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(255, 154, 86, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 154, 86, 0.4);
+    color: white;
+  }
+
+  .filters-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control, .form-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+
+  .export-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+
+  .table-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+  }
+
+  .table {
+    margin: 0;
+  }
+
+  .table thead th {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: white;
+    border: none;
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f7fafc;
+  }
+
+  .table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+  }
+
+  .table tbody td {
+    padding: 16px 20px;
+    vertical-align: middle;
+    border: none;
+    color: #2d3748;
+  }
+
+  .btn-group .btn {
+    border-radius: 8px;
+    margin: 0 2px;
+    padding: 8px 12px;
+    font-size: 12px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-danger {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+  }
+
+  .btn-info {
+    background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(66, 153, 225, 0.3);
+  }
+
+  .btn-warning {
+    background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(237, 137, 54, 0.3);
+  }
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    padding: 1.5rem;
+  }
+
+  .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+
+  .alert {
+    border-radius: 12px;
+    border: none;
+    padding: 1rem 1.5rem;
+  }
+
+  .alert-info {
+    background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+    color: #2c5282;
+  }
+
+  .text-truncate {
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .text-truncate:hover {
+    color: #667eea;
+    text-decoration: underline;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #718096;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    .page-title {
+      font-size: 2rem;
+    }
+    
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+  }
+
+  /* Correções para problemas de modal - REMOVIDO PARA EVITAR CONFLITOS */
+  /* Usando apenas estilos básicos do Bootstrap */
+
+  /* Correção para problemas de modal-backdrop */
+  .modal-backdrop {
+    z-index: 1040 !important;
+  }
+
+  .modal {
+    z-index: 1050 !important;
+  }
+
+  /* Garantir que múltiplos backdrops sejam removidos */
+  .modal-backdrop + .modal-backdrop {
+    display: none !important;
+  }
+
+  /* Forçar remoção de backdrops órfãos */
+  body.modal-open {
+    overflow: auto !important;
+  }
+
+  /* Estilo para o modal de inscrições */
+  #inscricaoModal .modal-dialog {
+    max-width: 95%;
+    width: 95%;
+  }
+
+  /* Melhorar visualização da tabela de inscrições */
+  .inscricoes-table {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+
+  /* Estilo para filtros */
+  .filters-card {
+    background: rgba(248, 250, 252, 0.8);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  /* Estado vazio da tabela */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary);
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+  }
+
+  .empty-state h5 {
+    margin-bottom: 10px;
+    color: var(--text-primary);
+  }
+
+  .empty-state p {
+    margin: 0;
+    font-size: 14px;
+  }
+</style>
+
+<!-- Header da Página -->
+<div class="page-header">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <h1 class="page-title">Gestão de Eventos</h1>
+      <p class="page-subtitle">Gerencie eventos e inscrições de funcionários</p>
+    </div>
+    <button class="action-btn" data-bs-toggle="modal" data-bs-target="#addEventoModal">
+      <i class="bi bi-plus-circle"></i>
+      <span class="d-none d-md-inline">Adicionar Evento</span>
+      <span class="d-md-none">Adicionar</span>
+    </button>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-card">
+  <div class="row g-3">
+    <div class="col-lg-3 col-md-6">
+      <label class="form-label">Tipo de Evento</label>
+      <select class="form-select" id="id_filter_tipo">
+        <option value="">Todos os tipos</option>
+        {% for tipo in tipos_evento %}
+        <option value="{{ tipo.id }}">{{ tipo.tipo_evento }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <label class="form-label">Buscar</label>
+      <input type="text" class="form-control" id="id_filter_busca" placeholder="Descrição do evento...">
+    </div>
+    <div class="col-lg-3 col-md-6">
+      <label class="form-label">Exportar</label>
+      <button class="export-btn w-100" id="downloadExcel">
+        <i class="bi bi-file-earmark-excel"></i>
+        <span>Excel</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="table table-hover" id="eventosTable">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Descrição</th>
+          <th>Vagas</th>
+          <th>Observação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for evento in eventos %}
+        <tr>
+          <td>
+            <span class="badge bg-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
+              {{ evento.tipo.tipo_evento|default:"-" }}
+            </span>
+          </td>
+          <td>
+            <strong>{{ evento.descricao|default:"-" }}</strong>
+          </td>
+          <td>
+            {% if evento.vagas %}
+              <span class="badge bg-success" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%) !important;">
+                {{ evento.vagas }} vagas
+              </span>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if evento.Obs %}
+              <span class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ evento.Obs }}">
+                {{ evento.Obs|truncatechars:50 }}
+              </span>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td>
+            <div class="btn-group" role="group">
+              <button class="btn btn-primary" onclick="editEvento({{ evento.id }})" title="Editar Evento">
+                <i class="bi bi-pencil-square"></i>
+              </button>
+              <button class="btn btn-info" onclick="gerenciarDiasEvento({{ evento.id }}, '{{ evento.descricao }}')" title="Dias do Evento">
+                <i class="bi bi-calendar-week"></i>
+              </button>
+              <button class="btn btn-success" onclick="inscreverFuncionarios({{ evento.id }}, '{{ evento.descricao }}')" title="Inscrições">
+                <i class="bi bi-people-fill"></i>
+              </button>
+              <button class="btn btn-warning" onclick="controlarFrequencia({{ evento.id }}, '{{ evento.descricao }}')" title="Frequência">
+                <i class="bi bi-clipboard-check"></i>
+              </button>
+              <button class="btn btn-danger" onclick="deleteEvento({{ evento.id }})" title="Remover">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5">
+            <div class="empty-state">
+              <i class="bi bi-calendar-x"></i>
+              <h5>Nenhum evento encontrado</h5>
+              <p>Clique em "Adicionar Evento" para criar o primeiro evento.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Adicionar/Editar Evento -->
+<div class="modal fade" id="addEventoModal" tabindex="-1" aria-labelledby="addEventoModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addEventoModalLabel">Adicionar Evento</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="eventoForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Tipo de Evento *</label>
+              <select class="form-select" name="tipo" id="id_tipo" required>
+                <option value="">Selecione...</option>
+                {% for tipo in tipos_evento %}
+                <option value="{{ tipo.id }}">{{ tipo.tipo_evento }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Vagas</label>
+              <input type="number" class="form-control" name="vagas" id="id_vagas" min="0" placeholder="Número de vagas disponíveis">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descrição *</label>
+              <input type="text" class="form-control" name="descricao" id="id_descricao" maxlength="50" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observação</label>
+              <textarea class="form-control" name="Obs" id="id_Obs" rows="3" maxlength="250" placeholder="Observações sobre o evento..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="action-btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Deleção -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Exclusão</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="text-center">
+          <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+          <h5 class="mt-3">Tem certeza que deseja excluir este evento?</h5>
+          <p class="text-muted">Esta ação não pode ser desfeita.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteButton">Excluir</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Visualização de Observação -->
+<div class="modal fade" id="viewObsModal" tabindex="-1" aria-labelledby="viewObsModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewObsModalLabel">Observação do Evento</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p id="obsContent"></p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de Inscrição de Funcionários -->
+<div class="modal fade" id="inscricaoModal" tabindex="-1" aria-labelledby="inscricaoModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="inscricaoModalLabel">Inscrições de Funcionários</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6 class="text-primary" id="eventoNome"></h6>
+            <p class="text-muted mb-0" id="eventoInfo"></p>
+          </div>
+          <div class="col-md-6 text-end">
+            <button class="action-btn" onclick="adicionarInscricao()">
+              <i class="bi bi-plus-circle"></i>
+              Adicionar Inscrição
+            </button>
+          </div>
+        </div>
+        
+        <!-- Filtros -->
+        <div class="filters-card mb-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label">Empresa</label>
+              <select class="form-select" id="filtroEmpresa">
+                <option value="">Todas as empresas</option>
+                {% for empresa in empresas %}
+                <option value="{{ empresa.id }}">{{ empresa.empresa }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Buscar Funcionário</label>
+              <input type="text" class="form-control" id="filtroFuncionario" placeholder="Nome ou CPF...">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">&nbsp;</label>
+              <button class="btn btn-outline-secondary w-100" onclick="limparFiltros()">
+                <i class="bi bi-arrow-clockwise"></i>
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Inscrições -->
+        <div class="table-responsive inscricoes-table">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Funcionário</th>
+                <th>CPF</th>
+                <th>Empresa</th>
+                <th>Setor</th>
+                <th>Data Inscrição</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="inscricoesTableBody">
+              <tr>
+                <td colspan="6" class="text-center text-muted">
+                  <div class="empty-state">
+                    <i class="bi bi-people"></i>
+                    <h5>Carregando inscrições...</h5>
+                    <p>Aguarde enquanto buscamos os dados.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-success" onclick="exportarInscricoes()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Exportar Inscrições
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Gerenciar Dias do Evento -->
+<div class="modal fade" id="diasEventoModal" tabindex="-1" aria-labelledby="diasEventoModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="diasEventoModalLabel">Gerenciar Dias do Evento</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6 class="text-primary" id="eventoNomeDias"></h6>
+            <p class="text-muted mb-0" id="eventoInfoDias"></p>
+          </div>
+          <div class="col-md-6 text-end">
+            <button class="action-btn" onclick="adicionarDiaEvento()">
+              <i class="bi bi-plus-circle"></i>
+              Adicionar Dia
+            </button>
+          </div>
+        </div>
+        
+        <!-- Tabela de Dias do Evento -->
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Hora Início</th>
+                <th>Hora Fim</th>
+                <th>Observações</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="diasEventoTableBody">
+              <tr>
+                <td colspan="5" class="text-center text-muted">
+                  <div class="empty-state">
+                    <i class="bi bi-calendar-week"></i>
+                    <h5>Carregando dias do evento...</h5>
+                    <p>Aguarde enquanto buscamos os dados.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Controlar Frequência do Evento -->
+<div class="modal fade" id="frequenciaModal" tabindex="-1" aria-labelledby="frequenciaModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-xl" style="max-width: 95vw;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="frequenciaModalLabel">Controlar Frequência do Evento</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row mb-4">
+          <div class="col-md-12">
+            <h6 class="text-primary" id="eventoNomeFrequencia"></h6>
+            <p class="text-muted mb-0" id="eventoInfoFrequencia"></p>
+          </div>
+        </div>
+        
+        <!-- Informações do Evento -->
+        <div class="alert alert-info mb-4">
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Evento:</strong> <span id="eventoNomeFrequencia"></span>
+            </div>
+            <div class="col-md-6 text-end">
+              <small class="text-muted">Clique nos selects para alterar o status de cada funcionário</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabela de Frequência Editável -->
+        <div id="frequenciaTableBody" style="height: calc(80vh - 200px); overflow-y: auto; max-height: 600px;">
+          <div class="text-center text-muted">
+            <div class="empty-state">
+              <i class="bi bi-clipboard-check"></i>
+              <h5>Carregando frequência...</h5>
+              <p>Aguarde enquanto buscamos os dados.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-success" onclick="exportarFrequencia()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Exportar Frequência
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adicionar/Editar Frequência -->
+<div class="modal fade" id="addFrequenciaModal" tabindex="-1" aria-labelledby="addFrequenciaModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addFrequenciaModalLabel">Registrar Frequência</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="frequenciaForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Funcionário *</label>
+              <select class="form-select" name="funcionario" id="id_funcionario_freq" required>
+                <option value="">Selecione um funcionário...</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Dia do Evento *</label>
+              <select class="form-select" name="dia_evento" id="id_dia_evento" required>
+                <option value="">Selecione um dia...</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Status *</label>
+              <select class="form-select" name="status" id="id_status" required>
+                <option value="">Selecione...</option>
+                <option value="P">Presente</option>
+                <option value="F">Faltou</option>
+                <option value="J">Justificado</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Hora Entrada</label>
+              <input type="time" class="form-control" name="hora_entrada" id="id_hora_entrada">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Hora Saída</label>
+              <input type="time" class="form-control" name="hora_saida" id="id_hora_saida">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" name="observacoes" id="id_observacoes_freq" rows="3" maxlength="500" placeholder="Observações sobre a frequência..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="action-btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adicionar/Editar Dia do Evento -->
+<div class="modal fade" id="addDiaEventoModal" tabindex="-1" aria-labelledby="addDiaEventoModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addDiaEventoModalLabel">Adicionar Dia do Evento</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="diaEventoForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Data *</label>
+              <input type="date" class="form-control" name="data" id="id_data" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Hora Início</label>
+              <input type="time" class="form-control" name="hora_inicio" id="id_hora_inicio">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Hora Fim</label>
+              <input type="time" class="form-control" name="hora_fim" id="id_hora_fim">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Observações</label>
+              <textarea class="form-control" name="observacoes" id="id_observacoes" rows="3" maxlength="500" placeholder="Observações sobre este dia do evento..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="action-btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Adicionar/Editar Inscrição -->
+<div class="modal fade" id="addInscricaoModal" tabindex="-1" aria-labelledby="addInscricaoModalLabel" aria-hidden="true" data-bs-backdrop="false" data-bs-keyboard="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addInscricaoModalLabel">Adicionar Inscrição</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="inscricaoForm" method="POST">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Funcionário *</label>
+              <select class="form-select" name="funcionario" id="id_funcionario" required>
+                <option value="">Selecione um funcionário...</option>
+                {% for funcionario in funcionarios %}
+                <option value="{{ funcionario.id }}">{{ funcionario.nome }} - {{ funcionario.cpf }} ({{ funcionario.empresa.empresa }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Informação:</strong> O funcionário será inscrito automaticamente com status "Confirmado".
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="action-btn">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+let eventoIdToEdit = null;
+let eventoIdToDelete = null;
+let eventoIdInscricao = null;
+let eventoIdDias = null;
+let eventoIdFrequencia = null;
+let diaEventoIdToEdit = null;
+let frequenciaIdToEdit = null;
+let select2Initialized = false;
+
+// Função para limpar todos os backdrops órfãos
+function cleanupModalBackdrops() {
+  const backdrops = document.querySelectorAll('.modal-backdrop');
+  if (backdrops.length > 1) {
+    // Manter apenas o primeiro backdrop
+    for (let i = 1; i < backdrops.length; i++) {
+      backdrops[i].remove();
+    }
+  }
+}
+
+// Função para forçar fechamento de modal
+function forceCloseModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    if (modalInstance) {
+      modalInstance.hide();
+    } else {
+      $(modal).modal('hide');
+    }
+  }
+  
+  // Limpar backdrops
+  cleanupModalBackdrops();
+  
+  // Remover classes do body
+  document.body.classList.remove('modal-open');
+  document.body.style.paddingRight = '';
+}
+
+$(document).ready(function() {
+    // Formulário de evento
+    $('#eventoForm').on('submit', function(e) {
+        e.preventDefault();
+        saveEvento();
+    });
+
+    // Formulário de inscrição
+    $('#inscricaoForm').on('submit', function(e) {
+        e.preventDefault();
+        saveInscricao();
+    });
+
+    // Formulário de dia do evento
+    $('#diaEventoForm').on('submit', function(e) {
+        e.preventDefault();
+        saveDiaEvento();
+    });
+
+    // Formulário de frequência
+    $('#frequenciaForm').on('submit', function(e) {
+        e.preventDefault();
+        saveFrequencia();
+    });
+
+    // Remover backdrops quando qualquer modal for aberto
+    $('.modal').on('show.bs.modal', function() {
+        removeAllBackdrops();
+    });
+
+    // Remover backdrops quando qualquer modal for fechado
+    $('.modal').on('hidden.bs.modal', function() {
+        removeAllBackdrops();
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+    });
+
+    // Função de emergência para fechar modal travado
+    window.forceCloseModal = function() {
+        $('.modal').modal('hide');
+        removeAllBackdrops();
+        document.body.classList.remove('modal-open');
+        document.body.style.paddingRight = '';
+    };
+
+    // Limpar formulário quando modal for fechado
+    $('#addEventoModal').on('hidden.bs.modal', function() {
+        resetForm();
+    });
+
+    $('#addInscricaoModal').on('hidden.bs.modal', function() {
+        resetInscricaoForm();
+        if (select2Initialized) {
+            $('#id_funcionario').val('').trigger('change');
+        }
+        // Garantir que o modal de inscrições permaneça aberto
+        if ($('#inscricaoModal').hasClass('show')) {
+            // Se o modal de inscrições estiver aberto, recarregar os dados
+            if (eventoIdInscricao) {
+                carregarInscricoes(eventoIdInscricao);
+            }
+        }
+    });
+
+    $('#addDiaEventoModal').on('hidden.bs.modal', function() {
+        resetDiaEventoForm();
+    });
+
+    $('#addFrequenciaModal').on('hidden.bs.modal', function() {
+        resetFrequenciaForm();
+    });
+
+    // Confirmar exclusão
+    $('#confirmDeleteButton').on('click', function() {
+        if (eventoIdToDelete) {
+            deleteEventoConfirmed();
+        }
+    });
+
+    // Filtros de inscrição
+    $('#filtroFuncionario, #filtroEmpresa').on('change keyup', function() {
+        filtrarInscricoes();
+    });
+
+    // Filtros de frequência
+    $('#filtroDiaEvento, #filtroStatus, #filtroFuncionarioFreq').on('change keyup', function() {
+        filtrarFrequencia();
+    });
+    
+    // Adicionar tecla de escape para fechar modais
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('.modal.show').modal('hide');
+        }
+    });
+});
+
+function adicionarEvento() {
+    eventoIdToEdit = null;
+    $('#addEventoModalLabel').text('Adicionar Evento');
+    $('#eventoForm')[0].reset();
+    $('#addEventoModal').modal('show');
+}
+
+function editEvento(id) {
+    eventoIdToEdit = id;
+    
+    // Buscar dados do evento
+    var url = '{% url "getEvento" 0 %}'.replace('0', id);
+    if (!url.endsWith('/')) {
+        url += '/';
+    }
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                var evento = response.evento;
+                
+                $('#id_tipo').val(evento.tipo);
+                $('#id_descricao').val(evento.descricao);
+                $('#id_Obs').val(evento.obs);
+                $('#id_vagas').val(evento.vagas);
+                
+                $('#addEventoModalLabel').text('Editar Evento');
+                $('#addEventoModal').modal('show');
+            } else {
+                alert('Erro ao carregar dados do evento: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Erro ao carregar dados do evento');
+        }
+    });
+}
+
+function saveEvento() {
+    var formData = {
+        'tipo': $('#id_tipo').val(),
+        'descricao': $('#id_descricao').val(),
+        'Obs': $('#id_Obs').val(),
+        'vagas': $('#id_vagas').val(),
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    };
+
+    var url = eventoIdToEdit ? '{% url "updateEvento" 0 %}'.replace('0', eventoIdToEdit) : '{% url "addEvento" %}';
+    
+    // Garantir que a URL termine com barra
+    if (!url.endsWith('/')) {
+        url += '/';
+    }
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                forceCloseModal('addEventoModal');
+                location.reload();
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Erro AJAX:', xhr.responseText);
+            alert('Erro ao salvar evento: ' + error);
+        }
+    });
+}
+
+function deleteEvento(id) {
+    eventoIdToDelete = id;
+    $('#confirmDeleteModal').modal('show');
+}
+
+function deleteEventoConfirmed() {
+    var url = '{% url "deleteEvento" 0 %}'.replace('0', eventoIdToDelete);
+    if (!url.endsWith('/')) {
+        url += '/';
+    }
+    
+    $.ajax({
+        url: url,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                forceCloseModal('confirmDeleteModal');
+                location.reload();
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Erro ao excluir evento');
+        }
+    });
+}
+
+function resetForm() {
+    $('#eventoForm')[0].reset();
+    eventoIdToEdit = null;
+    $('#addEventoModalLabel').text('Adicionar Evento');
+}
+
+function viewObs(obs) {
+    $('#obsContent').text(obs || 'Nenhuma observação');
+    $('#viewObsModal').modal('show');
+}
+
+// Exportar para Excel
+$('#downloadExcel').on('click', function() {
+    window.location.href = '{% url "exportEventosExcel" %}';
+});
+
+// Melhorar UX - clicar na observação para ver completa
+$(document).on('click', '.text-truncate', function() {
+    var obs = $(this).attr('title');
+    viewObs(obs);
+});
+
+// Função para abrir modal de inscrições
+function inscreverFuncionarios(eventoId, eventoNome) {
+    console.log('=== DEBUG: inscreverFuncionarios chamada com:', eventoId, eventoNome);
+    
+    eventoIdInscricao = eventoId;
+    $('#eventoNome').text(eventoNome);
+    $('#eventoInfo').text('Gerenciando inscrições para este evento');
+    
+    console.log('=== DEBUG: Abrindo modal de inscrições');
+    $('#inscricaoModal').modal('show');
+    
+    console.log('=== DEBUG: Chamando carregarInscricoes para evento:', eventoId);
+    carregarInscricoes(eventoId);
+}
+
+// Carregar inscrições do evento
+function carregarInscricoes(eventoId) {
+    console.log('=== DEBUG: Carregando inscrições para evento:', eventoId);
+    
+    $.ajax({
+        url: '{% url "getInscricoesEvento" 0 %}'.replace('0', eventoId),
+        type: 'GET',
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                console.log('=== DEBUG: Inscrições recebidas:', response.inscricoes);
+                renderizarInscricoes(response.inscricoes);
+            } else {
+                console.log('=== DEBUG: Erro na resposta:', response.message);
+                $('#inscricoesTableBody').html('<tr><td colspan="6" class="text-center text-muted">Erro ao carregar inscrições</td></tr>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            $('#inscricoesTableBody').html('<tr><td colspan="6" class="text-center text-muted">Erro ao carregar inscrições</td></tr>');
+        }
+    });
+}
+
+// Renderizar tabela de inscrições
+function renderizarInscricoes(inscricoes) {
+    console.log('=== DEBUG: renderizarInscricoes chamada com:', inscricoes);
+    console.log('=== DEBUG: Tipo de inscricoes:', typeof inscricoes);
+    console.log('=== DEBUG: Tamanho de inscricoes:', inscricoes ? inscricoes.length : 'null/undefined');
+    
+    let html = '';
+    
+    if (!inscricoes || inscricoes.length === 0) {
+        console.log('=== DEBUG: Nenhuma inscrição encontrada, renderizando mensagem vazia');
+        html = '<tr><td colspan="6" class="text-center text-muted">Nenhuma inscrição encontrada</td></tr>';
+    } else {
+        console.log('=== DEBUG: Processando', inscricoes.length, 'inscrições');
+        inscricoes.forEach(function(inscricao, index) {
+            console.log('=== DEBUG: Processando inscrição', index + 1, ':', inscricao);
+            
+            html += `
+                <tr data-empresa-id="${inscricao.funcionario_empresa_id || ''}">
+                    <td>${inscricao.funcionario_nome || 'N/A'}</td>
+                    <td>${inscricao.funcionario_cpf || 'N/A'}</td>
+                    <td>${inscricao.funcionario_empresa || '-'}</td>
+                    <td>${inscricao.funcionario_setor || '-'}</td>
+                    <td>${inscricao.data_inscricao || 'N/A'}</td>
+                    <td>
+                        <button class="btn btn-outline-danger btn-sm" onclick="excluirInscricao(${inscricao.id})" title="Excluir">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    console.log('=== DEBUG: HTML gerado:', html);
+    console.log('=== DEBUG: Inserindo HTML na tabela com ID: inscricoesTableBody');
+    
+    var tableBody = $('#inscricoesTableBody');
+    console.log('=== DEBUG: Elemento da tabela encontrado:', tableBody.length > 0);
+    
+    if (tableBody.length > 0) {
+        tableBody.html(html);
+        console.log('=== DEBUG: HTML inserido. Verificando se a tabela tem conteúdo...');
+        console.log('=== DEBUG: Número de linhas na tabela:', $('#inscricoesTableBody tr').length);
+    } else {
+        console.log('=== DEBUG: ERRO - Elemento inscricoesTableBody não encontrado!');
+    }
+}
+
+// Adicionar nova inscrição
+function adicionarInscricao() {
+    $('#addInscricaoModalLabel').text('Adicionar Inscrição');
+    $('#inscricaoForm')[0].reset();
+    $('#addInscricaoModal').modal('show');
+}
+
+// Salvar inscrição
+function saveInscricao() {
+    var formData = {
+        'evento': eventoIdInscricao,
+        'funcionario': $('#id_funcionario').val(),
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    };
+
+    console.log('=== DEBUG: Salvando inscrição:', formData);
+
+    $.ajax({
+        url: '{% url "addInscricao" %}',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                // Fechar apenas o modal de adicionar inscrição, mas manter o modal de inscrições aberto
+                $('#addInscricaoModal').modal('hide');
+                // Limpar o formulário
+                $('#inscricaoForm')[0].reset();
+                if (select2Initialized) {
+                    $('#id_funcionario').val('').trigger('change');
+                }
+                console.log('=== DEBUG: Recarregando inscrições para evento:', eventoIdInscricao);
+                carregarInscricoes(eventoIdInscricao);
+                // O modal de inscrições permanece aberto
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            alert('Erro ao salvar inscrição');
+        }
+    });
+}
+
+
+
+// Excluir inscrição
+function excluirInscricao(inscricaoId) {
+    if (confirm('Tem certeza que deseja excluir esta inscrição?')) {
+        $.ajax({
+            url: '{% url "deleteInscricao" 0 %}'.replace('0', inscricaoId),
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    carregarInscricoes(eventoIdInscricao);
+                    // Não fechar o modal de inscrições - manter aberto
+                } else {
+                    alert('Erro: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Erro ao excluir inscrição');
+            }
+        });
+    }
+}
+
+// Filtrar inscrições
+function filtrarInscricoes() {
+    var filtroFuncionario = $('#filtroFuncionario').val().toLowerCase();
+    var filtroEmpresa = $('#filtroEmpresa').val();
+    
+    $('#inscricoesTableBody tr').each(function() {
+        var row = $(this);
+        var funcionario = row.find('td:first').text().toLowerCase();
+        var cpf = row.find('td:nth-child(2)').text().toLowerCase();
+        var empresaId = row.attr('data-empresa-id');
+        
+        var showRow = true;
+        
+        // Filtro por nome ou CPF
+        if (filtroFuncionario && !funcionario.includes(filtroFuncionario) && !cpf.includes(filtroFuncionario)) {
+            showRow = false;
+        }
+        
+        // Filtro por empresa
+        if (filtroEmpresa && empresaId !== filtroEmpresa) {
+            showRow = false;
+        }
+        
+        row.toggle(showRow);
+    });
+}
+
+// Limpar filtros
+function limparFiltros() {
+    $('#filtroFuncionario').val('');
+    $('#filtroEmpresa').val('');
+    $('#inscricoesTableBody tr').show();
+}
+
+// Exportar inscrições
+function exportarInscricoes() {
+    if (eventoIdInscricao) {
+        window.location.href = '{% url "exportInscricoesExcel" 0 %}'.replace('0', eventoIdInscricao);
+    }
+}
+
+// Resetar formulário de inscrição
+function resetInscricaoForm() {
+    $('#inscricaoForm')[0].reset();
+    if (select2Initialized) {
+        $('#id_funcionario').val('').trigger('change');
+    }
+    $('#addInscricaoModalLabel').text('Adicionar Inscrição');
+}
+
+// Funções para gerenciar dias do evento
+function gerenciarDiasEvento(eventoId, eventoNome) {
+    eventoIdDias = eventoId;
+    $('#eventoNomeDias').text(eventoNome);
+    $('#eventoInfoDias').text('Gerenciando dias para este evento');
+    
+    console.log('=== DEBUG: Abrindo modal de dias do evento');
+    $('#diasEventoModal').modal('show');
+    
+    console.log('=== DEBUG: Chamando carregarDiasEvento para evento:', eventoId);
+    carregarDiasEvento(eventoId);
+}
+
+// Carregar dias do evento
+function carregarDiasEvento(eventoId) {
+    console.log('=== DEBUG: Carregando dias para evento:', eventoId);
+    
+    $.ajax({
+        url: '{% url "getDiasEvento" 0 %}'.replace('0', eventoId),
+        type: 'GET',
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                console.log('=== DEBUG: Dias recebidos:', response.dias);
+                renderizarDiasEvento(response.dias);
+            } else {
+                console.log('=== DEBUG: Erro na resposta:', response.message);
+                $('#diasEventoTableBody').html('<tr><td colspan="5" class="text-center text-muted">Erro ao carregar dias do evento</td></tr>');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            $('#diasEventoTableBody').html('<tr><td colspan="5" class="text-center text-muted">Erro ao carregar dias do evento</td></tr>');
+        }
+    });
+}
+
+// Renderizar tabela de dias do evento
+function renderizarDiasEvento(dias) {
+    console.log('=== DEBUG: renderizarDiasEvento chamada com:', dias);
+    console.log('=== DEBUG: Tipo de dias:', typeof dias);
+    console.log('=== DEBUG: Tamanho de dias:', dias ? dias.length : 'null/undefined');
+    
+    let html = '';
+    
+    if (!dias || dias.length === 0) {
+        console.log('=== DEBUG: Nenhum dia encontrado, renderizando mensagem vazia');
+        html = '<tr><td colspan="5" class="text-center text-muted">Nenhum dia cadastrado para este evento</td></tr>';
+    } else {
+        console.log('=== DEBUG: Processando', dias.length, 'dias');
+        dias.forEach(function(dia, index) {
+            console.log('=== DEBUG: Processando dia', index + 1, ':', dia);
+            
+            html += `
+                <tr>
+                    <td>${dia.data || 'N/A'}</td>
+                    <td>${dia.hora_inicio || '-'}</td>
+                    <td>${dia.hora_fim || '-'}</td>
+                    <td>${dia.observacoes || '-'}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button class="btn btn-outline-primary" onclick="editarDiaEvento(${dia.id})" title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="excluirDiaEvento(${dia.id})" title="Excluir">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+    
+    console.log('=== DEBUG: HTML gerado:', html);
+    console.log('=== DEBUG: Inserindo HTML na tabela com ID: diasEventoTableBody');
+    
+    var tableBody = $('#diasEventoTableBody');
+    console.log('=== DEBUG: Elemento da tabela encontrado:', tableBody.length > 0);
+    
+    if (tableBody.length > 0) {
+        tableBody.html(html);
+        console.log('=== DEBUG: HTML inserido. Verificando se a tabela tem conteúdo...');
+        console.log('=== DEBUG: Número de linhas na tabela:', $('#diasEventoTableBody tr').length);
+    } else {
+        console.log('=== DEBUG: ERRO - Elemento diasEventoTableBody não encontrado!');
+    }
+}
+
+// Adicionar novo dia do evento
+function adicionarDiaEvento() {
+    diaEventoIdToEdit = null;
+    $('#addDiaEventoModalLabel').text('Adicionar Dia do Evento');
+    $('#diaEventoForm')[0].reset();
+    $('#addDiaEventoModal').modal('show');
+}
+
+// Salvar dia do evento
+function saveDiaEvento() {
+    var formData = {
+        'evento': eventoIdDias,
+        'data': $('#id_data').val(),
+        'hora_inicio': $('#id_hora_inicio').val(),
+        'hora_fim': $('#id_hora_fim').val(),
+        'observacoes': $('#id_observacoes').val(),
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    };
+
+    console.log('=== DEBUG: Salvando dia do evento:', formData);
+
+    var url = diaEventoIdToEdit ? 
+        '{% url "updateDiaEvento" 0 %}'.replace('0', diaEventoIdToEdit) : 
+        '{% url "addDiaEvento" %}';
+
+    console.log('=== DEBUG: URL da requisição:', url);
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                $('#addDiaEventoModal').modal('hide');
+                $('#diaEventoForm')[0].reset();
+                console.log('=== DEBUG: Recarregando dias para evento:', eventoIdDias);
+                carregarDiasEvento(eventoIdDias);
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            alert('Erro ao salvar dia do evento');
+        }
+    });
+}
+
+// Resetar formulário de dia do evento
+function resetDiaEventoForm() {
+    $('#diaEventoForm')[0].reset();
+    $('#addDiaEventoModalLabel').text('Adicionar Dia do Evento');
+    diaEventoIdToEdit = null;
+}
+
+// Editar dia do evento
+function editarDiaEvento(diaEventoId) {
+    diaEventoIdToEdit = diaEventoId;
+    
+    $.ajax({
+        url: '{% url "getDiaEvento" 0 %}'.replace('0', diaEventoId),
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                var diaEvento = response.dia_evento;
+                
+                $('#id_data').val(diaEvento.data);
+                $('#id_hora_inicio').val(diaEvento.hora_inicio);
+                $('#id_hora_fim').val(diaEvento.hora_fim);
+                $('#id_observacoes').val(diaEvento.observacoes);
+                
+                $('#addDiaEventoModalLabel').text('Editar Dia do Evento');
+                $('#addDiaEventoModal').modal('show');
+            } else {
+                alert('Erro ao carregar dados do dia do evento');
+            }
+        },
+        error: function() {
+            alert('Erro ao carregar dados do dia do evento');
+        }
+    });
+}
+
+// Excluir dia do evento
+function excluirDiaEvento(diaEventoId) {
+    if (confirm('Tem certeza que deseja excluir este dia do evento?')) {
+        $.ajax({
+            url: '{% url "deleteDiaEvento" 0 %}'.replace('0', diaEventoId),
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    carregarDiasEvento(eventoIdDias);
+                } else {
+                    alert('Erro: ' + response.message);
+                }
+            },
+            error: function() {
+                alert('Erro ao excluir dia do evento');
+            }
+        });
+    }
+}
+
+// Funções para controlar frequência do evento
+function controlarFrequencia(eventoId, eventoNome) {
+    eventoIdFrequencia = eventoId;
+    $('#eventoNomeFrequencia').text(eventoNome);
+    $('#eventoInfoFrequencia').text('Controlando frequência para este evento');
+    
+    console.log('=== DEBUG: Abrindo modal de frequência');
+    $('#frequenciaModal').modal('show');
+    
+    console.log('=== DEBUG: Chamando carregarFrequencia para evento:', eventoId);
+    carregarFrequencia(eventoId);
+    carregarDiasEventoParaFrequencia(eventoId);
+}
+
+// Carregar frequência do evento
+function carregarFrequencia(eventoId) {
+    console.log('=== DEBUG: Carregando frequência para evento:', eventoId);
+    
+    $.ajax({
+        url: '{% url "getFrequenciasEvento" 0 %}'.replace('0', eventoId),
+        type: 'GET',
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                $('#frequenciaTableBody').html(response.html);
+            } else {
+                let html = '<tr><td colspan="8" class="text-center text-muted">';
+                html += '<div class="alert alert-warning">';
+                html += '<i class="bi bi-exclamation-triangle"></i>';
+                html += '<h5>Erro ao carregar frequências</h5>';
+                html += '<p>' + response.message + '</p>';
+                html += '</div></td></tr>';
+                $('#frequenciaTableBody').html(html);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            let html = '<tr><td colspan="8" class="text-center text-muted">';
+            html += '<div class="alert alert-danger">';
+            html += '<i class="bi bi-x-circle"></i>';
+            html += '<h5>Erro ao carregar frequências</h5>';
+            html += '<p>Não foi possível carregar os dados de frequência.</p>';
+            html += '</div></td></tr>';
+            $('#frequenciaTableBody').html(html);
+        }
+    });
+}
+
+// Carregar dias do evento para o select de frequência
+function carregarDiasEventoParaFrequencia(eventoId) {
+    console.log('=== DEBUG: Carregando dias para frequência do evento:', eventoId);
+    
+    $.ajax({
+        url: '{% url "getDiasEvento" 0 %}'.replace('0', eventoId),
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                let html = '<option value="">Selecione um dia...</option>';
+                response.dias.forEach(function(dia) {
+                    html += `<option value="${dia.id}">${dia.data} ${dia.hora_inicio ? '(' + dia.hora_inicio + ')' : ''}</option>`;
+                });
+                $('#id_dia_evento').html(html);
+                $('#filtroDiaEvento').html(html);
+            }
+        },
+        error: function() {
+            console.log('Erro ao carregar dias do evento para frequência');
+        }
+    });
+}
+
+// Registrar nova frequência
+function registrarFrequencia() {
+    frequenciaIdToEdit = null;
+    $('#addFrequenciaModalLabel').text('Registrar Frequência');
+    $('#frequenciaForm')[0].reset();
+    
+    // Carregar funcionários inscritos no evento
+    carregarFuncionariosInscritos(eventoIdFrequencia);
+    
+    $('#addFrequenciaModal').modal('show');
+}
+
+// Carregar funcionários inscritos no evento
+function carregarFuncionariosInscritos(eventoId) {
+    console.log('=== DEBUG: Carregando funcionários inscritos para evento:', eventoId);
+    
+    $.ajax({
+        url: '{% url "getInscricoesEvento" 0 %}'.replace('0', eventoId),
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                let html = '<option value="">Selecione um funcionário...</option>';
+                response.inscricoes.forEach(function(inscricao) {
+                    html += `<option value="${inscricao.id}">${inscricao.funcionario_nome} - ${inscricao.funcionario_cpf}</option>`;
+                });
+                $('#id_funcionario_freq').html(html);
+            }
+        },
+        error: function() {
+            console.log('Erro ao carregar funcionários inscritos');
+        }
+    });
+}
+
+// Salvar frequência
+function saveFrequencia() {
+    var formData = {
+        'controle_evento': $('#id_funcionario_freq').val(),
+        'dia_evento': $('#id_dia_evento').val(),
+        'status': $('#id_status').val(),
+        'hora_entrada': $('#id_hora_entrada').val(),
+        'hora_saida': $('#id_hora_saida').val(),
+        'observacoes': $('#id_observacoes_freq').val(),
+        'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
+    };
+
+    console.log('=== DEBUG: Salvando frequência:', formData);
+
+    var url = frequenciaIdToEdit ? 
+        '{% url "updateFrequencia" 0 %}'.replace('0', frequenciaIdToEdit) : 
+        '{% url "addFrequencia" %}';
+
+    console.log('=== DEBUG: URL da requisição:', url);
+
+    $.ajax({
+        url: url,
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                $('#addFrequenciaModal').modal('hide');
+                $('#frequenciaForm')[0].reset();
+                console.log('=== DEBUG: Recarregando frequência para evento:', eventoIdFrequencia);
+                carregarFrequencia(eventoIdFrequencia);
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            alert('Erro ao salvar frequência');
+        }
+    });
+}
+
+// Filtrar frequência
+function filtrarFrequencia() {
+    var filtroDia = $('#filtroDiaEvento').val();
+    var filtroStatus = $('#filtroStatus').val();
+    var filtroFuncionario = $('#filtroFuncionarioFreq').val().toLowerCase();
+    
+    $('#frequenciaTableBody tr').each(function() {
+        var row = $(this);
+        var funcionario = row.find('td:first').text().toLowerCase();
+        var cpf = row.find('td:nth-child(2)').text().toLowerCase();
+        var dia = row.find('td:nth-child(3)').text();
+        var status = row.find('td:nth-child(4)').text();
+        
+        var showRow = true;
+        
+        // Filtro por dia
+        if (filtroDia && dia !== filtroDia) {
+            showRow = false;
+        }
+        
+        // Filtro por status
+        if (filtroStatus && status !== filtroStatus) {
+            showRow = false;
+        }
+        
+        // Filtro por funcionário
+        if (filtroFuncionario && !funcionario.includes(filtroFuncionario) && !cpf.includes(filtroFuncionario)) {
+            showRow = false;
+        }
+        
+        row.toggle(showRow);
+    });
+}
+
+// Limpar filtros de frequência
+function limparFiltrosFrequencia() {
+    $('#filtroDiaEvento').val('');
+    $('#filtroStatus').val('');
+    $('#filtroFuncionarioFreq').val('');
+    $('#frequenciaTableBody tr').show();
+}
+
+// Salvar frequências em lote
+function salvarFrequenciasEmLote(eventoId) {
+    console.log('=== DEBUG: Salvando frequências em lote para evento:', eventoId);
+    
+    // Coletar todos os valores dos selects
+    var frequencias = [];
+    $('.status-select').each(function() {
+        var select = $(this);
+        var inscricaoId = select.data('inscricao-id');
+        var diaEventoId = select.data('dia-evento-id');
+        var status = select.val();
+        
+        frequencias.push({
+            inscricao_id: inscricaoId,
+            dia_evento_id: diaEventoId,
+            status: status
+        });
+    });
+    
+    console.log('=== DEBUG: Frequências coletadas:', frequencias);
+    
+    if (frequencias.length === 0) {
+        alert('Nenhuma frequência para salvar');
+        return;
+    }
+    
+    // Mostrar loading
+    var btnSalvar = $('button[onclick="salvarFrequenciasEmLote(' + eventoId + ')"]');
+    var originalText = btnSalvar.html();
+    btnSalvar.html('<i class="bi bi-hourglass-split"></i> Salvando...').prop('disabled', true);
+    
+    $.ajax({
+        url: '{% url "salvarFrequenciasLote" 0 %}'.replace('0', eventoId),
+        type: 'POST',
+        data: {
+            frequencias: JSON.stringify(frequencias),
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val()
+        },
+        success: function(response) {
+            console.log('=== DEBUG: Resposta do servidor:', response);
+            if (response.status === 'success') {
+                // Mostrar sucesso
+                btnSalvar.html('<i class="bi bi-check-circle"></i> Salvo!').removeClass('btn-primary').addClass('btn-success');
+                setTimeout(function() {
+                    btnSalvar.html(originalText).removeClass('btn-success').addClass('btn-primary').prop('disabled', false);
+                }, 2000);
+                
+                // Recarregar a tabela de frequências
+                carregarFrequencia(eventoId);
+            } else {
+                alert('Erro: ' + response.message);
+                btnSalvar.html(originalText).prop('disabled', false);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.log('=== DEBUG: Erro AJAX:', xhr.responseText);
+            alert('Erro ao salvar frequências');
+            btnSalvar.html(originalText).prop('disabled', false);
+        }
+    });
+}
+
+// Exportar frequência
+function exportarFrequencia() {
+    if (eventoIdFrequencia) {
+        window.location.href = '{% url "exportFrequenciasExcel" 0 %}'.replace('0', eventoIdFrequencia);
+    }
+}
+
+// Resetar formulário de frequência
+function resetFrequenciaForm() {
+    $('#frequenciaForm')[0].reset();
+    $('#addFrequenciaModalLabel').text('Registrar Frequência');
+    frequenciaIdToEdit = null;
+}
+</script>
+{% endblock %} 

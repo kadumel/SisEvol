@@ -1,0 +1,760 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load absenteismo_filters %}
+
+{% block title %}Dashboard RH{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header da Página -->
+  <div class="page-header mb-4">
+    <div class="row align-items-center">
+      <div class="col">
+        <h1 class="page-title">
+          <i class="bi bi-graph-up text-primary"></i>
+          Dashboard RH
+        </h1>
+        <p class="text-muted mb-0">Indicadores e métricas de Recursos Humanos</p>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary" onclick="exportarRelatorio()">
+          <i class="bi bi-file-earmark-excel"></i>
+          Exportar Relatório
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-funnel"></i>
+        Filtros
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" id="filtrosForm">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label">Competência</label>
+            <input type="month" class="form-control" name="competencia" value="{{ competencia }}" onchange="this.form.submit()">
+            <small class="text-muted">Para indicadores de turnover e absenteísmo</small>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label d-flex justify-content-between align-items-center">
+              Empresa
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selecionarTodasEmpresas()" title="Selecionar Todas">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="desmarcarTodasEmpresas()" title="Desmarcar Todas">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
+              {% for empresa in empresas %}
+              <div class="form-check">
+                <input class="form-check-input empresa-checkbox" type="checkbox" name="empresa" value="{{ empresa.id }}" 
+                       id="empresa_{{ empresa.id }}" 
+                       {% if empresa.id|stringformat:"s" in filtros.empresa %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="empresa_{{ empresa.id }}">
+                  {{ empresa.empresa }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Lotação</label>
+            <select class="form-select" name="lotacao" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for lotacao in lotacoes %}
+              <option value="{{ lotacao.id }}" {% if filtros.lotacao_id == lotacao.id|stringformat:"s" %}selected{% endif %}>{{ lotacao.lotacao }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Cargo</label>
+            <select class="form-select" name="cargo" onchange="this.form.submit()">
+              <option value="">Todos</option>
+              {% for cargo in cargos %}
+              <option value="{{ cargo.id }}" {% if filtros.cargo_id == cargo.id|stringformat:"s" %}selected{% endif %}>{{ cargo.cargo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Status</label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="status" value="A" 
+                       id="status_A" 
+                       {% if 'A' in filtros.status or not filtros.status %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="status_A">
+                  Ativo
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="status" value="F" 
+                       id="status_F" 
+                       {% if 'F' in filtros.status or not filtros.status %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="status_F">
+                  Afastado
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="status" value="D" 
+                       id="status_D" 
+                       {% if 'D' in filtros.status or not filtros.status %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="status_D">
+                  Demitido
+                </label>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="limparFiltros()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Cards Principais -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-primary">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ indicadores.total_funcionarios }}</h3>
+              <p class="stat-label">Total de Funcionários</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-success">
+              <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ indicadores.funcionarios_ativos }}</h3>
+              <p class="stat-label">Funcionários Ativos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-warning">
+              <i class="bi bi-person-x-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ indicadores.funcionarios_afastados }}</h3>
+              <p class="stat-label">Funcionários Afastados</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-danger">
+              <i class="bi bi-person-dash-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ indicadores.funcionarios_demitidos }}</h3>
+              <p class="stat-label">Funcionários Demitidos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicadores de Turnover e Absenteísmo -->
+  <div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-arrow-repeat"></i>
+            Turnover Mensal
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-{% if indicadores.turnover_mensal > 10 %}danger{% elif indicadores.turnover_mensal > 5 %}warning{% else %}success{% endif %}">
+            {{ indicadores.turnover_mensal }}%
+          </h2>
+          <p class="text-muted mb-0">{{ competencia }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-calendar-x"></i>
+            Turnover Anual
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-{% if indicadores.turnover_anual > 20 %}danger{% elif indicadores.turnover_anual > 10 %}warning{% else %}success{% endif %}">
+            {{ indicadores.turnover_anual }}%
+          </h2>
+          <p class="text-muted mb-0">{{ competencia|slice:":4" }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-percent"></i>
+            Absenteísmo Médio
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-{% if indicadores.absenteismo_medio > 10 %}danger{% elif indicadores.absenteismo_medio > 5 %}warning{% else %}success{% endif %}">
+            {{ indicadores.absenteismo_medio }}%
+          </h2>
+          <p class="text-muted mb-0">{{ competencia }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicadores de Período de Experiência -->
+  <div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-clock-history"></i>
+            Em Experiência
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-warning">{{ indicadores.funcionarios_em_experiencia }}</h2>
+          <p class="text-muted mb-0">{{ indicadores.percentual_em_experiencia }}% do total</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-check-circle"></i>
+            Passaram 1º Período
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-info">{{ indicadores.funcionarios_passaram_primeiro_termino }}</h2>
+          <p class="text-muted mb-0">{{ indicadores.percentual_passaram_primeiro }}% do total</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-award"></i>
+            Passaram 2º Período
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-success">{{ indicadores.funcionarios_passaram_segundo_termino }}</h2>
+          <p class="text-muted mb-0">{{ indicadores.percentual_passaram_segundo }}% do total</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-file-earmark-text"></i>
+            Com Contrato Exp.
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-primary">{{ indicadores.funcionarios_contrato_experiencia }}</h2>
+          <p class="text-muted mb-0">Total de funcionários</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evolução do Turnover -->
+  <div class="row mb-4">
+    <div class="col-12 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-graph-up"></i>
+            Evolução do Turnover - {{ competencia|slice:":4" }}
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="turnoverEvolucaoChart" width="800" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráficos e Análises -->
+  <div class="row mb-4">
+    <!-- Distribuição por Gênero -->
+    <div class="col-xl-6 col-lg-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-pie-chart"></i>
+            Distribuição por Gênero
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="generoChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Faixas Etárias -->
+    <div class="col-xl-6 col-lg-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-bar-chart"></i>
+            Faixas Etárias
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="idadeChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distribuição por Empresa e Cargo -->
+  <div class="row mb-4">
+    <!-- Funcionários por Empresa -->
+    <div class="col-xl-6 col-lg-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-building"></i>
+            Funcionários por Empresa
+          </h5>
+        </div>
+        <div class="card-body">
+          <canvas id="empresaChart" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Funcionários por Cargo -->
+    <div class="col-xl-6 col-lg-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-briefcase"></i>
+            Funcionários por Cargo
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead>
+                <tr>
+                  <th>Cargo</th>
+                  <th class="text-center">Funcionários</th>
+                  <th class="text-center">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for cargo, count in indicadores.funcionarios_por_cargo.items %}
+                <tr>
+                  <td>{{ cargo }}</td>
+                  <td class="text-center">{{ count }}</td>
+                  <td class="text-center">{{ count|percentage:indicadores.total_funcionarios }}%</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Indicadores Adicionais -->
+  <div class="row mb-4">
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-clock-history"></i>
+            Tempo Médio de Empresa
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-info">{{ indicadores.tempo_medio_empresa }} anos</h2>
+          <p class="text-muted mb-0">Funcionários ativos</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-gender-male"></i>
+            Distribuição Masculina
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-primary">{{ indicadores.funcionarios_masculino }}</h2>
+          <p class="text-muted mb-0">Funcionários</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-4 col-md-6 mb-3">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-gender-female"></i>
+            Distribuição Feminina
+          </h5>
+        </div>
+        <div class="card-body text-center">
+          <h2 class="text-pink">{{ indicadores.funcionarios_feminino }}</h2>
+          <p class="text-muted mb-0">Funcionários</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.stat-card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+}
+
+.stat-icon i {
+  font-size: 1.5rem;
+  color: white;
+}
+
+.stat-number {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin: 0;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin: 0;
+}
+
+.text-pink {
+  color: #e83e8c !important;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Gráfico de Gênero
+const generoCtx = document.getElementById('generoChart').getContext('2d');
+const generoChart = new Chart(generoCtx, {
+  type: 'pie',
+  data: {
+    labels: ['Masculino', 'Feminino', 'Outros'],
+    datasets: [{
+      data: [
+        {{ indicadores.funcionarios_masculino }},
+        {{ indicadores.funcionarios_feminino }},
+        {{ indicadores.funcionarios_outros }}
+      ],
+      backgroundColor: [
+        '#007bff',
+        '#e83e8c',
+        '#6c757d'
+      ],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom'
+      }
+    }
+  }
+});
+
+// Gráfico de Faixas Etárias
+const idadeCtx = document.getElementById('idadeChart').getContext('2d');
+const idadeChart = new Chart(idadeCtx, {
+  type: 'bar',
+  data: {
+    labels: ['18-25', '26-35', '36-45', '46-55', '56-65', '65+'],
+    datasets: [{
+      label: 'Funcionários',
+      data: [
+        {{ indicadores.faixa_18_25 }},
+        {{ indicadores.faixa_26_35 }},
+        {{ indicadores.faixa_36_45 }},
+        {{ indicadores.faixa_46_55 }},
+        {{ indicadores.faixa_56_65 }},
+        {{ indicadores.faixa_65_mais }}
+      ],
+      backgroundColor: [
+        '#28a745',
+        '#17a2b8',
+        '#ffc107',
+        '#fd7e14',
+        '#dc3545',
+        '#6f42c1'
+      ],
+      borderWidth: 1,
+      borderColor: '#dee2e6'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      }
+    }
+  }
+});
+
+// Gráfico de Funcionários por Empresa
+const empresaCtx = document.getElementById('empresaChart').getContext('2d');
+const empresaChart = new Chart(empresaCtx, {
+  type: 'bar',
+  data: {
+    labels: [
+      {% for empresa, count in indicadores.funcionarios_por_empresa.items %}
+        '{{ empresa }}'{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    datasets: [{
+      label: 'Funcionários',
+      data: [
+        {% for empresa, count in indicadores.funcionarios_por_empresa.items %}
+          {{ count }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ],
+      backgroundColor: [
+        '#007bff',
+        '#28a745',
+        '#ffc107',
+        '#dc3545',
+        '#6f42c1',
+        '#fd7e14',
+        '#20c997',
+        '#e83e8c',
+        '#6c757d',
+        '#17a2b8'
+      ],
+      borderWidth: 1,
+      borderColor: '#dee2e6'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          stepSize: 1
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const total = {{ indicadores.total_funcionarios }};
+            const percentage = ((context.parsed.y / total) * 100).toFixed(1);
+            return `Funcionários: ${context.parsed.y} (${percentage}%)`;
+          }
+        }
+      }
+    }
+  }
+});
+
+// Gráfico de Evolução do Turnover
+const turnoverEvolucaoCtx = document.getElementById('turnoverEvolucaoChart').getContext('2d');
+const turnoverEvolucaoChart = new Chart(turnoverEvolucaoCtx, {
+  type: 'line',
+  data: {
+    labels: [
+      {% for item in indicadores.turnover_evolucao %}
+        '{{ item.nome_mes }}'{% if not forloop.last %},{% endif %}
+      {% endfor %}
+    ],
+    datasets: [{
+      label: 'Turnover (%)',
+      data: [
+        {% for item in indicadores.turnover_evolucao %}
+          {{ item.turnover }}{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      ],
+      borderColor: '#dc3545',
+      backgroundColor: 'rgba(220, 53, 69, 0.1)',
+      borderWidth: 3,
+      fill: true,
+      tension: 0.4,
+      pointBackgroundColor: '#dc3545',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+      pointRadius: 6,
+      pointHoverRadius: 8
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Turnover (%)'
+        },
+        ticks: {
+          callback: function(value) {
+            return value + '%';
+          }
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Meses'
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `Turnover: ${context.parsed.y}%`;
+          }
+        }
+      }
+    },
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    }
+  }
+});
+
+function limparFiltros() {
+  window.location.href = window.location.pathname;
+}
+
+function exportarRelatorio() {
+  // Implementar exportação para Excel
+  alert('Funcionalidade de exportação será implementada em breve!');
+}
+
+function selecionarTodasEmpresas() {
+  const checkboxes = document.querySelectorAll('.empresa-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = true;
+  });
+  document.getElementById('filtrosForm').submit();
+}
+
+function desmarcarTodasEmpresas() {
+  const checkboxes = document.querySelectorAll('.empresa-checkbox');
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = false;
+  });
+  
+  // Adicionar campo hidden para indicar que todas foram desmarcadas
+  let hiddenField = document.getElementById('empresa_desmarcadas');
+  if (!hiddenField) {
+    hiddenField = document.createElement('input');
+    hiddenField.type = 'hidden';
+    hiddenField.name = 'empresa_desmarcadas';
+    hiddenField.value = 'true';
+    hiddenField.id = 'empresa_desmarcadas';
+    document.getElementById('filtrosForm').appendChild(hiddenField);
+  }
+  
+  document.getElementById('filtrosForm').submit();
+}
+</script>
+{% endblock %} 

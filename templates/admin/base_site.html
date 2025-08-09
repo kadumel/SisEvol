@@ -1,0 +1,6 @@
+{% extends 'admin/base.html' %}
+
+{% block extrahead %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    {{ block.super }}  <!-- Inclui o conteúdo original do bloco extrahead -->
+{% endblock %}

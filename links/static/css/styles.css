@@ -1,0 +1,15 @@
+#btn-inserir {
+    margin: 5px;
+}
+
+#btn-finalizar {
+    margin: 5px;
+}
+
+li { 
+    list-style-type: none;
+}
+
+#btn {
+    text-align-last: right;
+}

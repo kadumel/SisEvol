@@ -1,0 +1,666 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-Br">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>{% block title %} Evolução {% endblock %}</title>
+  
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  
+  <!-- DataTables CSS -->
+  <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet">
+  <link href="https://cdn.datatables.net/responsive/2.5.0/css/responsive.dataTables.min.css" rel="stylesheet">
+  
+  <!-- Select2 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet" />
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Favicon -->
+  <link rel="icon" href="{% static 'image/LOGO---EVOL.png' %}" sizes="32x32">
+  
+  <style>
+    :root {
+      --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --secondary-gradient: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+      --sidebar-gradient: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+      --header-bg: rgba(255, 255, 255, 0.95);
+      --sidebar-bg: #1a1f36;
+      --text-primary: #2d3748;
+      --text-secondary: #718096;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+      --border-radius: 12px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+    
+    /* Header */
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: var(--header-bg);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border-color);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      box-shadow: var(--shadow-md);
+    }
+    
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .toggle-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border: none;
+      color: white;
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 12px;
+      border-radius: 12px;
+      transition: var(--transition);
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .toggle-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .logo {
+      height: 90px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+    }
+    
+    .user-menu {
+      position: relative;
+    }
+    
+    .user-btn {
+      background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+      border: none;
+      color: white;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 20px;
+      border-radius: 12px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .user-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+      color: white;
+    }
+    
+    .dropdown-menu {
+      border: none;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-xl);
+      padding: 8px;
+      margin-top: 12px;
+    }
+    
+    .dropdown-item {
+      border-radius: 8px;
+      margin: 2px 0;
+      padding: 10px 16px;
+      transition: var(--transition);
+    }
+    
+    .dropdown-item:hover {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      transform: translateX(4px);
+    }
+    
+    /* Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      width: 320px;
+      height: calc(100vh - 70px);
+      background: var(--sidebar-gradient);
+      color: white;
+      z-index: 999;
+      overflow-y: auto;
+      transition: var(--transition);
+      box-shadow: var(--shadow-xl);
+    }
+    
+    .sidebar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .sidebar::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 3px;
+    }
+    
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .sidebar-nav {
+      padding: 24px 0;
+    }
+    
+    .nav-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .nav-item {
+      margin: 8px 0;
+    }
+    
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 28px;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      transition: var(--transition);
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      border-radius: 12px;
+      margin: 0 20px;
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+      transition: var(--transition);
+    }
+    
+    .nav-link:hover::before {
+      left: 100%;
+    }
+    
+    .nav-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      text-decoration: none;
+      transform: translateX(8px);
+      box-shadow: var(--shadow-md);
+    }
+    
+    .nav-link.active {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .nav-link i:first-child {
+      font-size: 20px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: var(--transition);
+    }
+    
+    .nav-link:hover i:first-child {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    
+    .nav-link.active i:first-child {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    
+    .nav-link[data-bs-toggle="collapse"] {
+      cursor: pointer;
+    }
+    
+    .nav-link[data-bs-toggle="collapse"] .bi-chevron-down {
+      margin-left: auto;
+      transition: var(--transition);
+      font-size: 14px;
+    }
+    
+    .nav-link[data-bs-toggle="collapse"][aria-expanded="true"] .bi-chevron-down {
+      transform: rotate(180deg);
+    }
+    
+    .submenu {
+      background: rgba(255, 255, 255, 0.05);
+      margin: 8px 28px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+    
+    /* Submenu Groups */
+    .submenu-group {
+      margin: 16px 0;
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .submenu-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .submenu-header i {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .submenu-items {
+      padding-left: 8px;
+    }
+    
+    .submenu-link {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 24px;
+      color: rgba(255, 255, 255, 0.8);
+      text-decoration: none;
+      font-size: 14px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      transition: var(--transition);
+      font-weight: 500;
+    }
+    
+    .submenu-link:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      text-decoration: none;
+      transform: translateX(6px);
+    }
+    
+    .submenu-link.active {
+      background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+      color: white;
+    }
+    
+    .submenu-link i {
+      font-size: 16px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      transition: var(--transition);
+    }
+    
+    .submenu-link:hover i {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.1);
+    }
+    
+    .submenu-link.active i {
+      background: rgba(255, 255, 255, 0.25);
+    }
+    
+    /* Main Content */
+    .main-wrapper {
+      margin-left: 320px;
+      margin-top: 70px;
+      min-height: calc(100vh - 70px);
+      display: flex;
+      flex-direction: column;
+      transition: var(--transition);
+    }
+    
+    .main {
+      flex: 1;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 70px); /* 70px header */
+    }
+    
+    .content-wrapper {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow-lg);
+      padding: 32px;
+      border: 1px solid var(--border-color);
+      min-height: calc(100vh - 140px); /* 70px header + 70px footer */
+      display: flex;
+      flex-direction: column;
+    }
+    
+    /* Footer */
+
+    
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      
+      .sidebar.show {
+        transform: translateX(0);
+      }
+      
+      .main-wrapper {
+        margin-left: 0;
+      }
+      
+      .header {
+        padding: 0 16px;
+      }
+      
+      .main {
+        padding: 16px;
+        min-height: calc(100vh - 70px);
+      }
+      
+      .content-wrapper {
+        padding: 20px;
+        min-height: calc(100vh - 140px);
+      }
+    }
+    
+    /* Sidebar colapsada no desktop */
+    .sidebar.collapsed {
+      transform: translateX(-100%);
+    }
+    .main-wrapper.collapsed {
+      margin-left: 0;
+    }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .content-wrapper {
+      animation: fadeInUp 0.6s ease-out;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <div class="header-left">
+        <button class="toggle-btn" id="sidebarToggle">
+          <i class="bi bi-list"></i>
+        </button>
+        <img src="{% static 'image/LOGO---EVOL.png' %}" alt="Logo" class="logo">
+      </div>
+      
+      <div class="user-menu">
+        <div class="dropdown">
+          <button class="user-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i>
+            <span class="d-none d-md-inline">
+              {% if user.is_authenticated %}
+                {{ user.username }}
+              {% else %}
+                Usuário
+              {% endif %}
+            </span>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><h6 class="dropdown-header">{{ user.username }}</h6></li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <a class="dropdown-item" href="{% url 'admin:index' %}">
+                <i class="bi bi-gear me-2"></i>Administração
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <form method="POST" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button class="dropdown-item text-danger" type="submit">
+                  <i class="bi bi-box-arrow-right me-2"></i>Sair
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <nav class="sidebar-nav">
+      <ul class="nav-list">
+        <li class="nav-item">
+          <a class="nav-link {% if request.resolver_match.url_name == 'indexLinks' %}active{% endif %}" href="{% url 'indexLinks' %}">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Dashboard</span>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="collapse" href="#rhMenu" role="button" aria-expanded="false" aria-controls="rhMenu">
+            <i class="bi bi-people-fill"></i>
+            <span>RH</span>
+            <i class="bi bi-chevron-down"></i>
+          </a>
+          <div class="collapse" id="rhMenu">
+            <div class="submenu">
+              <!-- Submenu Dashboard -->
+              <div class="submenu-group">
+                <div class="submenu-header">
+                  <i class="bi bi-graph-up"></i>
+                  <span>Dashboard</span>
+                </div>
+                <div class="submenu-items">
+                  <a href="{% url 'dashboardRH' %}" class="submenu-link {% if request.resolver_match.url_name == 'dashboardRH' %}active{% endif %}">
+                    <i class="bi bi-bar-chart"></i>
+                    <span>Dashboard RH</span>
+                  </a>
+                  <a href="{% url 'gestaoAbsenteismo' %}" class="submenu-link {% if request.resolver_match.url_name == 'gestaoAbsenteismo' %}active{% endif %}">
+                    <i class="bi bi-graph-down"></i>
+                    <span>Dash Absenteísmo</span>
+                  </a>
+                </div>
+              </div>
+              
+              <!-- Outros itens do menu RH -->
+              <a href="{% url 'gestaoEventos' %}" class="submenu-link {% if request.resolver_match.url_name == 'gestaoEventos' %}active{% endif %}">
+                <i class="bi bi-calendar-event"></i>
+                <span>Eventos</span>
+              </a>
+              <a href="{% url 'listFuncionario' %}" class="submenu-link {% if request.resolver_match.url_name == 'listFuncionario' %}active{% endif %}">
+                <i class="bi bi-person-badge"></i>
+                <span>Funcionários</span>
+              </a>
+              <a href="{% url 'cadastroAbsenteismo' %}" class="submenu-link {% if request.resolver_match.url_name == 'cadastroAbsenteismo' %}active{% endif %}">
+                <i class="bi bi-calendar-check"></i>
+                <span>Absenteísmo</span>
+              </a>
+            </div>
+          </div>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="collapse" href="#orcamentoMenu" role="button" aria-expanded="false" aria-controls="orcamentoMenu">
+            <i class="bi bi-calculator"></i>
+            <span>Orçamento</span>
+            <i class="bi bi-chevron-down"></i>
+          </a>
+          <div class="collapse" id="orcamentoMenu">
+            <div class="submenu">
+              <a href="{% url 'gestao:dre_orcado' %}" class="submenu-link {% if request.resolver_match.url_name == 'dre_orcado' %}active{% endif %}">
+                <i class="bi bi-graph-up"></i>
+                <span>DRE Orçado</span>
+              </a>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <div class="main-wrapper">
+    <main class="main">
+      <div class="content-wrapper">
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdn.datatables.net/responsive/2.5.0/js/dataTables.responsive.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
+  <script src="https://cdn.datatables.net/plug-ins/1.13.6/sorting/datetime-moment.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.mask/1.14.16/jquery.mask.min.js"></script>
+  
+  <!-- Correções para modais -->
+  <link href="{% static 'css/modal-fixes.css' %}" rel="stylesheet">
+  <script src="{% static 'js/modal-fixes.js' %}"></script>
+  
+  <script>
+    // Função para salvar estado do sidebar
+    function saveSidebarState(collapsed) {
+      localStorage.setItem('sidebarCollapsed', collapsed);
+    }
+    
+    // Função para carregar estado do sidebar
+    function loadSidebarState() {
+      const collapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+      const sidebar = document.getElementById('sidebar');
+      const mainWrapper = document.querySelector('.main-wrapper');
+      
+      if (collapsed) {
+        sidebar.classList.add('collapsed');
+        mainWrapper.classList.add('collapsed');
+      }
+    }
+    
+    // Carregar estado ao carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+      loadSidebarState();
+    });
+    
+    // Sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', function() {
+      const sidebar = document.getElementById('sidebar');
+      const mainWrapper = document.querySelector('.main-wrapper');
+      
+      sidebar.classList.toggle('collapsed');
+      mainWrapper.classList.toggle('collapsed');
+      
+      // Salvar estado
+      saveSidebarState(sidebar.classList.contains('collapsed'));
+    });
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebarToggle');
+      
+      if (window.innerWidth <= 768) {
+        if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
+          sidebar.classList.remove('show');
+        }
+      }
+    });
+  </script>
+
+  {% block script %}{% endblock %}
+</body>
+
+</html>

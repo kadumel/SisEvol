@@ -1,0 +1,149 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Menu Orçamento{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{% url 'indexLinks' %}">
+          <i class="bi bi-house"></i> Início
+        </a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        <i class="bi bi-calculator"></i> Menu Orçamento
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Header da Página -->
+  <div class="page-header mb-4">
+    <div class="row align-items-center">
+      <div class="col">
+        <h1 class="page-title">
+          <i class="bi bi-calculator text-primary"></i>
+          Menu Orçamento
+        </h1>
+        <p class="text-muted mb-0">Gerencie e visualize orçamentos</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards do Menu -->
+  <div class="row">
+    {% for item in menu_items %}
+    <div class="col-xl-4 col-md-6 mb-4">
+      <div class="card menu-card h-100">
+        <div class="card-body text-center">
+          <div class="menu-icon mb-3">
+            <i class="{{ item.icon }} text-{{ item.color }}"></i>
+          </div>
+          <h5 class="card-title">{{ item.title }}</h5>
+          <p class="card-text text-muted">{{ item.description }}</p>
+          <a href="{% if item.url == 'orcamento_visualizacao' %}{% url 'gestao:orcamento_visualizacao' %}{% elif item.url == 'admin:Gestao_orcamento_changelist' %}{% url 'admin:Gestao_orcamento_changelist' %}{% else %}{{ item.url }}{% endif %}" 
+             class="btn btn-{{ item.color }}">
+            Acessar
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Estatísticas Rápidas -->
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-graph-up"></i>
+            Estatísticas Rápidas
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="stat-item text-center">
+                <h3 class="text-primary">{{ total_empresas|default:"0" }}</h3>
+                <p class="text-muted mb-0">Empresas</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-item text-center">
+                <h3 class="text-success">{{ total_contas|default:"0" }}</h3>
+                <p class="text-muted mb-0">Contas</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-item text-center">
+                <h3 class="text-info">{{ total_orcamentos|default:"0" }}</h3>
+                <p class="text-muted mb-0">Orçamentos</p>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="stat-item text-center">
+                <h3 class="text-warning">{{ valor_total|default:"R$ 0,00" }}</h3>
+                <p class="text-muted mb-0">Valor Total</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.breadcrumb {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 0;
+}
+
+.breadcrumb-item a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb-item a:hover {
+  color: #5a67d8;
+  text-decoration: underline;
+}
+
+.breadcrumb-item.active {
+  color: #6c757d;
+  font-weight: 600;
+}
+
+.menu-card {
+  border: none;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.menu-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.menu-icon {
+  font-size: 3rem;
+}
+
+.stat-item h3 {
+  font-size: 2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+.stat-item p {
+  font-size: 0.875rem;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,430 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load absenteismo_filters %}
+
+{% block title %}Cadastro de Absenteísmo{% endblock %}
+
+{% block content %}
+<div class="container-fluid d-flex flex-column">
+  <!-- Header da Página -->
+  <div class="page-header mb-4 flex-shrink-0">
+    <div class="row align-items-center">
+      <div class="col">
+        <h1 class="page-title">
+          <i class="bi bi-calendar-check text-primary"></i>
+          Cadastro de Absenteísmo
+        </h1>
+        <p class="text-muted mb-0">Registro de absenteísmo por competência</p>
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-success" onclick="salvarTodos()">
+          <i class="bi bi-save"></i>
+          Salvar Todos
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4 flex-shrink-0">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-funnel"></i>
+        Filtros
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" id="filtrosForm">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label">Competência</label>
+            <input type="month" class="form-control" name="competencia" value="{{ competencia }}" onchange="this.form.submit()">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Empresa</label>
+            <select class="form-select" name="empresa" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for empresa in empresas %}
+              <option value="{{ empresa.id }}" {% if filtros.empresa_id == empresa.id|stringformat:"s" %}selected{% endif %}>{{ empresa.empresa }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Lotação</label>
+            <select class="form-select" name="lotacao" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for lotacao in lotacoes %}
+              <option value="{{ lotacao.id }}" {% if filtros.lotacao_id == lotacao.id|stringformat:"s" %}selected{% endif %}>{{ lotacao.lotacao }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Cargo</label>
+            <select class="form-select" name="cargo" onchange="this.form.submit()">
+              <option value="">Todos</option>
+              {% for cargo in cargos %}
+              <option value="{{ cargo.id }}" {% if filtros.cargo_id == cargo.id|stringformat:"s" %}selected{% endif %}>{{ cargo.cargo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="limparFiltros()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Limpar
+            </button>
+            <button type="button" class="btn btn-primary" onclick="gerarMatriz()">
+              <i class="bi bi-table"></i>
+              Gerar Matriz
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Matriz de Absenteísmo -->
+  <div class="card flex-grow-1 d-flex flex-column">
+    <div class="card-header flex-shrink-0">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-table"></i>
+        Matriz de Absenteísmo - {{ competencia }}
+      </h5>
+    </div>
+    <div class="card-body flex-grow-1 p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover mb-0" id="matrizAbsenteismo">
+          <thead class="table-dark sticky-top">
+            <tr>
+              <th style="min-width: 200px; position: sticky; left: 0; z-index: 1000; background: #212529;">Funcionário</th>
+              <th class="text-center" style="min-width: 100px;">Dias Trabalho</th>
+              <th class="text-center" style="min-width: 100px;">Dias Falta</th>
+              <th class="text-center" style="min-width: 100px;">Dias Justificados</th>
+              <th class="text-center" style="min-width: 100px;">Dias Atraso</th>
+              <th class="text-center" style="min-width: 100px;">Saída Antecipada</th>
+              <th class="text-center" style="min-width: 100px;">Dias Extras</th>
+              <th class="text-center" style="min-width: 100px;">Dias Férias</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for funcionario in funcionarios %}
+            {% with key=funcionario.id|stringformat:"s"|add:"_"|add:competencia %}
+            {% with registro=registros_dict|get_item:key %}
+            <!-- DEBUG: {{ funcionario.nome }} (ID: {{ funcionario.id }}) - Key: {{ key }} - Registro: {{ registro|yesno:"Sim,Não" }} -->
+            {% if registro %}
+            <!-- DEBUG: Dias trabalho: {{ registro.dias_trabalho }}, Dias falta: {{ registro.dias_falta }} -->
+            {% endif %}
+            <tr>
+              <td style="position: sticky; left: 0; z-index: 999; background: white; border-right: 2px solid #dee2e6;">
+                <strong>{{ funcionario.nome }}</strong>
+                <br>
+                <small class="text-muted">{{ funcionario.matricula }} - {{ funcionario.empresa.empresa }}</small>
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_trabalho_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_trabalho' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_falta_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_falta' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_justificados_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_justificados' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_atraso_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_atraso' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_saida_antecipada_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_saida_antecipada' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_extras_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_extras' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+              <td class="text-center">
+                <input type="number" class="form-control form-control-sm" 
+                       name="dias_ferias_{{ funcionario.id }}_{{ competencia }}" 
+                       value="{{ registro|get_attr:'dias_ferias' }}"
+                       min="0" max="31" placeholder="0"
+                       onchange="marcarAlterado(this)">
+              </td>
+            </tr>
+            {% endwith %}
+            {% endwith %}
+            {% empty %}
+            <tr>
+              <td colspan="8" class="text-center text-muted">
+                <div class="empty-state">
+                  <i class="bi bi-people text-success"></i>
+                  <h5>Nenhum funcionário encontrado</h5>
+                  <p>Ajuste os filtros para visualizar os funcionários.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+.sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.empty-state i {
+  font-size: 3rem;
+  margin-bottom: 16px;
+}
+
+.empty-state h5 {
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.empty-state p {
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.form-control-sm {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.campo-alterado {
+  background-color: #fff3cd !important;
+  border-color: #ffc107 !important;
+}
+
+/* Forçar expansão do content-wrapper */
+.content-wrapper {
+  height: auto !important;
+  min-height: calc(100vh - 140px) !important;
+}
+
+.main-wrapper {
+  height: auto !important;
+  min-height: calc(100vh - 70px) !important;
+}
+
+.main {
+  height: auto !important;
+  min-height: calc(100vh - 70px) !important;
+}
+
+/* Ajustes para expansão dinâmica */
+.container-fluid {
+  min-height: calc(100vh - 140px);
+}
+
+.table-responsive {
+  min-height: 400px; /* Altura mínima para a tabela */
+}
+
+/* Garantir que a tabela ocupe toda a altura disponível */
+#matrizAbsenteismo {
+  margin-bottom: 0;
+}
+
+/* Scrollbar personalizada */
+.table-responsive::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* Ajuste para mobile */
+@media (max-width: 768px) {
+  .container-fluid {
+    min-height: calc(100vh - 120px);
+  }
+  
+  .content-wrapper {
+    min-height: calc(100vh - 120px) !important;
+  }
+}
+</style>
+
+<script>
+let camposAlterados = new Set();
+
+$(document).ready(function() {
+    // Inicializar tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+
+// Função para marcar campo como alterado
+function marcarAlterado(elemento) {
+    camposAlterados.add(elemento);
+    elemento.classList.add('campo-alterado');
+}
+
+// Função para gerar matriz
+function gerarMatriz() {
+    $('#filtrosForm').submit();
+}
+
+// Função para limpar filtros
+function limparFiltros() {
+    $('select[name="empresa"]').val('');
+    $('select[name="lotacao"]').val('');
+    $('select[name="cargo"]').val('');
+    $('#filtrosForm').submit();
+}
+
+// Função para salvar todos os registros
+function salvarTodos() {
+    if (camposAlterados.size === 0) {
+        alert('Nenhuma alteração detectada para salvar.');
+        return;
+    }
+
+    let registros = [];
+    
+    // Coletar todos os campos alterados
+    camposAlterados.forEach(function(campo) {
+        let nome = campo.name;
+        
+        // Padrão: dias_trabalho_123_2024-01, dias_falta_123_2024-01, etc.
+        // Para dias_saida_antecipada: dias_saida_antecipada_123_2024-01
+        let match = nome.match(/^dias_([a-z_]+)_(\d+)_(.+)$/);
+        
+        if (match) {
+            let tipoCampo = match[1]; // trabalho, falta, justificados, atraso, saida_antecipada, extras, ferias
+            let funcionario_id = match[2];
+            let competencia = match[3];
+            
+            // Mapear o tipo do campo para o nome correto do modelo
+            let tipoModelo;
+            switch(tipoCampo) {
+                case 'trabalho':
+                    tipoModelo = 'dias_trabalho';
+                    break;
+                case 'falta':
+                    tipoModelo = 'dias_falta';
+                    break;
+                case 'justificados':
+                    tipoModelo = 'dias_justificados';
+                    break;
+                case 'atraso':
+                    tipoModelo = 'dias_atraso';
+                    break;
+                case 'saida_antecipada':
+                    tipoModelo = 'dias_saida_antecipada';
+                    break;
+                case 'extras':
+                    tipoModelo = 'dias_extras';
+                    break;
+                case 'ferias':
+                    tipoModelo = 'dias_ferias';
+                    break;
+                default:
+                    console.warn('Tipo de campo desconhecido:', tipoCampo);
+                    return;
+            }
+            
+            // Verificar se já existe registro para este funcionário/competência
+            let registroExistente = registros.find(r => r.funcionario_id == funcionario_id && r.competencia == competencia);
+            
+            if (registroExistente) {
+                registroExistente[tipoModelo] = campo.value || 0;
+            } else {
+                let novoRegistro = {
+                    funcionario_id: funcionario_id,
+                    competencia: competencia,
+                    dias_trabalho: 0,
+                    dias_falta: 0,
+                    dias_justificados: 0,
+                    dias_atraso: 0,
+                    dias_saida_antecipada: 0,
+                    dias_extras: 0,
+                    dias_ferias: 0
+                };
+                novoRegistro[tipoModelo] = campo.value || 0;
+                registros.push(novoRegistro);
+            }
+        }
+    });
+
+    if (registros.length === 0) {
+        alert('Nenhum registro válido para salvar.');
+        return;
+    }
+
+    // Confirmar salvamento
+    if (!confirm(`Deseja salvar ${registros.length} registros?`)) {
+        return;
+    }
+
+    // Enviar dados
+    $.ajax({
+        url: '{% url "salvarAbsenteismoLote" %}',
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: $('[name=csrfmiddlewaretoken]').val(),
+            registros: registros.map(r => JSON.stringify(r))
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                // Limpar marcação de campos alterados
+                camposAlterados.clear();
+                $('.campo-alterado').removeClass('campo-alterado');
+                // Recarregar página para mostrar dados atualizados
+                location.reload();
+            } else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function() {
+            alert('Erro ao salvar registros');
+        }
+    });
+}
+</script>
+{% endblock %} 

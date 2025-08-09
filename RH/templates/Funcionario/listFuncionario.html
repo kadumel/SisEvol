@@ -1,0 +1,532 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .action-btn {
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(255, 154, 86, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 154, 86, 0.4);
+    color: white;
+  }
+  .filters-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+  .form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    display: block;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .form-control, .custom-select {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.9);
+    width: 100%;
+    margin-top: 0.25rem;
+  }
+  .form-control:focus, .custom-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .export-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+  .table-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+  }
+  .table thead th {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    color: white;
+    border: none;
+    padding: 16px 20px;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .table tbody tr {
+    transition: all 0.3s ease;
+    border-bottom: 1px solid #f7fafc;
+  }
+  .table tbody tr:hover {
+    background: rgba(102, 126, 234, 0.05);
+    transform: scale(1.01);
+  }
+  .table tbody td {
+    padding: 16px 20px;
+    vertical-align: middle;
+    border: none;
+    color: #2d3748;
+  }
+  .btn-group .btn {
+    border-radius: 8px;
+    margin: 0 2px;
+    padding: 8px 12px;
+    font-size: 12px;
+    transition: all 0.3s ease;
+  }
+  .btn-success {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+  }
+  .btn-danger {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    border: none;
+    box-shadow: 0 2px 8px rgba(245, 101, 101, 0.3);
+  }
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+  .modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  }
+  .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
+    border: none;
+    padding: 1.5rem;
+  }
+  .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+  }
+  .modal-body {
+    padding: 2rem;
+  }
+  .modal-footer {
+    border-top: 1px solid #e2e8f0;
+    padding: 1.5rem;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #718096;
+  }
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  @media (max-width: 768px) {
+    .page-header {
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .page-title {
+      font-size: 2rem;
+    }
+    .action-btn {
+      width: 100%;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+  }
+</style>
+
+<!-- Header da Página -->
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="page-title">Lista de Funcionários</h1>
+  </div>
+  <div>
+    <a href="{% url 'addFuncionario' %}" class="action-btn"><i class="bi bi-plus-circle"></i>Adicionar</a>
+    <a href="#" class="export-btn" id="downloadExcel"><i class="bi bi-file-earmark-excel"></i>Excel</a>
+  </div>
+</div>
+
+<!-- Filtros -->
+<div class="filters-card">
+  <form method="GET" id="filtrosForm">
+    <div class="row g-3">
+      <div class="col-md-2">
+        <div class="filter-group">
+          <label class="form-label">Empresa</label>
+          <select class="custom-select" name="empresa" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {% for emp in empresa %}
+            <option value="{{ emp.empresa }}" {% if filtros.empresa == emp.empresa %}selected{% endif %}>{{ emp.empresa }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="filter-group">
+          <label class="form-label">Lotação</label>
+          <select class="custom-select" name="lotacao" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {% for lot in lotacao %}
+            <option value="{{ lot.lotacao }}" {% if filtros.lotacao == lot.lotacao %}selected{% endif %}>{{ lot.lotacao }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="filter-group">
+          <label class="form-label">Cargo</label>
+          <select class="custom-select" name="cargo" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {% for car in cargo %}
+            <option value="{{ car.cargo }}" {% if filtros.cargo == car.cargo %}selected{% endif %}>{{ car.cargo }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="filter-group">
+          <label class="form-label">Status</label>
+          <select class="custom-select" name="status" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            <option value="Ativo" {% if filtros.status == 'Ativo' %}selected{% endif %}>Ativo</option>
+            <option value="Demitido" {% if filtros.status == 'Demitido' %}selected{% endif %}>Demitido</option>
+            <option value="Afastado" {% if filtros.status == 'Afastado' %}selected{% endif %}>Afastado</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="filter-group">
+          <label class="form-label">Filtros Especiais</label>
+          <select class="custom-select" name="filtro_especial" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            <option value="1" {% if filtros.filtro_especial == '1' %}selected{% endif %}>Niver do mês</option>
+            <option value="2" {% if filtros.filtro_especial == '2' %}selected{% endif %}>Venc. Exp 1 (7 dias)</option>
+            <option value="3" {% if filtros.filtro_especial == '3' %}selected{% endif %}>Venc. Exp 2 (7 dias)</option>
+            <option value="4" {% if filtros.filtro_especial == '4' %}selected{% endif %}>Venc. Exp 1 (30 dias)</option>
+            <option value="5" {% if filtros.filtro_especial == '5' %}selected{% endif %}>Venc. Exp 2 (30 dias)</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-secondary" onclick="limparFiltros()">
+          <i class="bi bi-arrow-clockwise"></i>
+          Limpar
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- Tabela -->
+<div class="table-card">
+  <div class="table-responsive">
+    <table class="table table-hover display" id="id_table_add">
+      <thead>
+        <tr>
+          <th>Empresa</th>
+          <th>Matrícula</th>
+          <th>Nome</th>
+          <th>Lotação</th>
+          <th>Cargo</th>
+          <th>Admissão</th>
+          <th>Data Nasc.</th>
+          <th>Data Exp. 1</th>
+          <th>Data Exp. 2</th>
+          <th>Status</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for func in funcionario %}
+        <tr>
+          <td>{{func.empresa}}</td>
+          <td>{{func.matricula}}</td>
+          <td>{{func.nome}}</td>
+          <td>{{func.lotacao}}</td>
+          <td>{{func.cargo}}</td>
+          <td>{{func.dt_admissao|date:"d/m/Y"}}</td>
+          <td>{{func.dt_nascimento|date:"d/m/Y"}}</td>
+          <td>{{func.dt_primeiro_termino|date:"d/m/Y"}}</td>
+          <td>{{func.dt_segundo_termino|date:"d/m/Y"}}</td>
+          {% if func.status == "D" %}
+            <td><span class="badge bg-danger">Demitido</span></td>
+          {% elif func.status == "A" %}
+            <td><span class="badge bg-success">Ativo</span></td>
+          {% else  %}
+            <td><span class="badge bg-primary">Afastado</span></td>
+          {% endif %}
+          <td>
+            <div class="btn-group" role="group">
+              <a href="{% url 'editFuncionario' func.id %}" class="btn btn-primary"><i class="bi bi-pencil-square"></i></a>
+              <button onclick="deleteFuncionario(event, this)" class="btn btn-danger" data-funcionario-id="{{ func.id }}">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="11">
+            <div class="empty-state">
+              <i class="bi bi-person-x"></i>
+              <h5>Nenhum funcionário encontrado</h5>
+              <p>Clique em "Adicionar" para cadastrar o primeiro funcionário.</p>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal de Confirmação de Deleção -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmação de Deleção</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Você tem certeza que deseja deletar este funcionário?
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteButton">Deletar</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block script %}
+<script>
+// Função para abrir o modal de confirmação e armazenar o ID do fornecedor
+function deleteFuncionario(e, btn) {
+    e.preventDefault();
+
+    // Pega o ID do funcionario a partir do botão clicado
+    let funcionarioToDelete = $(btn).data('funcionario-id');
+
+    // Define a URL para a requisição de deleção
+    let deleteUrl = '/delFuncionario/' + funcionarioToDelete;
+
+    // Armazena o ID e URL no modal para usar ao confirmar a deleção
+    $('#confirmDeleteModal').data('funcionario-id', funcionarioToDelete);
+    $('#confirmDeleteModal').data('delete-url', deleteUrl);
+
+    // Exibe o modal de confirmação
+    $('#confirmDeleteModal').modal('show');
+}
+
+// Função para realmente deletar o funcionario após a confirmação no modal
+function confirmarDelecao() {
+    // Pega o ID e a URL armazenados no modal
+    let funcionarioId = $('#confirmDeleteModal').data('funcionario-id');
+    let deleteUrl = $('#confirmDeleteModal').data('delete-url');
+
+    // Faz a requisição Ajax para deletar o fornecedor
+    $.ajax({
+        url: deleteUrl,
+        type: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',  // Inclui o token CSRF no cabeçalho
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                alert(response.message);
+                // Remove o cliente da lista ou atualize a página conforme necessário
+                $('#funcionario-' + funcionarioId).remove();
+                // Fecha o modal
+                $('#confirmDeleteModal').modal('hide');
+                window.location.reload();
+            }else if  (response.status === 'forbidden'){
+              alert(response.message);
+              $('#confirmDeleteModal').modal('hide');
+            }else {
+                alert('Erro: ' + response.message);
+            }
+        },
+        error: function(response) {
+            alert('Erro: ' + response.message);
+        }
+    });
+}
+
+// Quando clicar no botão de confirmação dentro do modal
+$('#confirmDeleteButton').on('click', confirmarDelecao);
+
+// Função para limpar filtros
+function limparFiltros() {
+    window.location.href = window.location.pathname;
+}
+
+$(document).ready(function() {
+    var table = $('#id_table_add').DataTable({
+        language: {
+            url: "https://cdn.datatables.net/plug-ins/1.13.7/i18n/pt-BR.json", 
+        },
+        autoWidth: true,
+        pageLength: 10,         // Número de linhas por página
+        lengthMenu: [5, 10, 25, 50], // Opções de paginação
+        responsive: true,        // Ajuste para telas menores
+    });
+});
+
+
+
+
+//Gera documento excel
+$("#downloadExcel").click(function(e){
+    e.preventDefault();
+
+    // Mostra indicador de carregamento
+    const btn = $(this);
+    const originalText = btn.html();
+    btn.html('<i class="bi bi-hourglass-split"></i>Gerando...');
+    btn.prop('disabled', true);
+
+    // Carrega os funcionários filtrados
+    const url = "/ExportExcel/"
+    var empresa = $("select[name='empresa']").val() || 'Todos'
+    var lotacao = $("select[name='lotacao']").val() || 'Todos'
+    var cargo  = $("select[name='cargo']").val() || 'Todos'
+    var status  = $("select[name='status']").val() || 'Todos'
+    
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: {"emp": empresa, "lot": lotacao, "car":cargo, "stt": status,  csrfmiddlewaretoken: '{{ csrf_token }}'},
+        xhrFields: {
+          responseType: "arraybuffer" // Configura para receber os dados como binário
+        },
+        success: function (data, sts, xhr) {
+            // Restaura o botão
+            btn.html(originalText);
+            btn.prop('disabled', false);
+
+            // Verifica se é um erro JSON
+            const contentType = xhr.getResponseHeader("Content-Type");
+            if (contentType && contentType.includes("application/json")) {
+                // Converte o arraybuffer para string para ler o erro
+                const decoder = new TextDecoder("utf-8");
+                const errorText = decoder.decode(data);
+                const errorData = JSON.parse(errorText);
+                
+                if (errorData.status === 'forbidden') {
+                    alert('Erro: ' + errorData.message);
+                } else {
+                    alert('Erro ao gerar o Excel: ' + errorData.message);
+                }
+                return;
+            }
+
+            // Criar um link para download do arquivo
+            const blob = new Blob([data], { type: xhr.getResponseHeader("Content-Type") });
+            const url = window.URL.createObjectURL(blob);
+
+            // Criar elemento de download
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "funcionarios.xlsx"; // Nome do arquivo
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+
+            // Revogar o objeto URL
+            window.URL.revokeObjectURL(url);
+            
+            // Feedback de sucesso
+            alert('Arquivo Excel gerado com sucesso!');
+        }, 
+        error: function (xhr, sts, error) {
+            // Restaura o botão
+            btn.html(originalText);
+            btn.prop('disabled', false);
+            
+            console.error("Erro ao gerar o Excel:", error);
+            
+            // Tenta ler a resposta de erro
+            if (xhr.responseText) {
+                try {
+                    const errorData = JSON.parse(xhr.responseText);
+                    alert('Erro: ' + errorData.message);
+                } catch (e) {
+                    alert('Erro ao gerar o Excel. Verifique o console para mais detalhes.');
+                }
+            } else {
+                alert('Erro ao gerar o Excel. Verifique o console para mais detalhes.');
+            }
+        }
+    })
+});
+
+
+
+
+
+</script>
+{% endblock %}
+
+
+

@@ -1,0 +1,401 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gestão de Absenteísmo{% endblock %}
+
+{% block content %}
+<style>
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 16px;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+  }
+  .page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .export-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .export-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(72, 187, 120, 0.4);
+    color: white;
+  }
+  @media (max-width: 768px) {
+    .page-header {
+      padding: 1.5rem;
+      text-align: center;
+    }
+    .page-title {
+      font-size: 2rem;
+    }
+    .export-btn {
+      width: 100%;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+  }
+  
+  /* Estilos para cards de estatísticas */
+  .stat-card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+  }
+
+  .stat-icon i {
+    font-size: 1.5rem;
+    color: white;
+  }
+
+  .stat-number {
+    font-size: 1.75rem;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin: 0;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+  }
+
+  .empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .empty-state h5 {
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+  }
+
+  .empty-state p {
+    color: #adb5bd;
+    margin: 0;
+  }
+</style>
+
+<div class="container-fluid" style="background: rgba(255,255,255,0.95); border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.07); padding: 32px; margin-bottom: 2rem;">
+
+<!-- Header da Página -->
+<div class="page-header d-flex justify-content-between align-items-center">
+  <div>
+    <h1 class="page-title">
+      <i class="bi bi-graph-down"></i>
+      Gestão de Absenteísmo
+    </h1>
+    <p class="text-white-50 mb-0">Análise e controle de absenteísmo por competência</p>
+  </div>
+  <div>
+    <button class="export-btn" onclick="exportarRelatorio()">
+      <i class="bi bi-file-earmark-excel"></i>
+      Exportar Relatório
+    </button>
+  </div>
+</div>
+
+  <!-- Cards de Estatísticas -->
+  <div class="row mb-4">
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-primary">
+              <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_funcionarios }}</h3>
+              <p class="stat-label">Funcionários</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-success">
+              <i class="bi bi-calendar-check"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_dias_trabalho }}</h3>
+              <p class="stat-label">Dias Trabalho</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-danger">
+              <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_dias_falta }}</h3>
+              <p class="stat-label">Dias Falta</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-warning">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_dias_justificados }}</h3>
+              <p class="stat-label">Justificados</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-info">
+              <i class="bi bi-clock-history"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_dias_atraso }}</h3>
+              <p class="stat-label">Atrasos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6 mb-3">
+      <div class="card stat-card">
+        <div class="card-body">
+          <div class="d-flex align-items-center">
+            <div class="stat-icon bg-secondary">
+              <i class="bi bi-calendar-x"></i>
+            </div>
+            <div class="stat-content">
+              <h3 class="stat-number">{{ estatisticas.total_dias_saida_antecipada }}</h3>
+              <p class="stat-label">Saídas Antecipadas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Taxa de Absenteísmo -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="card-title mb-0">
+            <i class="bi bi-percent"></i>
+            Taxa de Absenteísmo - {{ estatisticas.periodo_analise }}
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <h2 class="text-{% if estatisticas.taxa_absenteismo > 10 %}danger{% elif estatisticas.taxa_absenteismo > 5 %}warning{% else %}success{% endif %}">
+                {{ estatisticas.taxa_absenteismo }}%
+              </h2>
+              <p class="text-muted mb-0">{{ estatisticas.periodo_analise }}</p>
+            </div>
+            <div class="col-md-6">
+              <div class="progress" style="height: 20px;">
+                <div class="progress-bar bg-{% if estatisticas.taxa_absenteismo > 10 %}danger{% elif estatisticas.taxa_absenteismo > 5 %}warning{% else %}success{% endif %}" 
+                     role="progressbar" 
+                     style="width: {{ estatisticas.taxa_absenteismo }}%"
+                     aria-valuenow="{{ estatisticas.taxa_absenteismo }}" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                  {{ estatisticas.taxa_absenteismo }}%
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-funnel"></i>
+        Filtros
+      </h5>
+    </div>
+    <div class="card-body">
+      <form method="GET" id="filtrosForm">
+        <div class="row g-3">
+          <div class="col-md-2">
+            <label class="form-label">Competência</label>
+            <input type="month" class="form-control" name="competencia" value="{{ competencia }}" onchange="this.form.submit()">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Empresa</label>
+            <select class="form-select" name="empresa" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for empresa in empresas %}
+              <option value="{{ empresa.id }}" {% if filtros.empresa_id == empresa.id|stringformat:"s" %}selected{% endif %}>{{ empresa.empresa }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Lotação</label>
+            <select class="form-select" name="lotacao" onchange="this.form.submit()">
+              <option value="">Todas</option>
+              {% for lotacao in lotacoes %}
+              <option value="{{ lotacao.id }}" {% if filtros.lotacao_id == lotacao.id|stringformat:"s" %}selected{% endif %}>{{ lotacao.lotacao }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">Cargo</label>
+            <select class="form-select" name="cargo" onchange="this.form.submit()">
+              <option value="">Todos</option>
+              {% for cargo in cargos %}
+              <option value="{{ cargo.id }}" {% if filtros.cargo_id == cargo.id|stringformat:"s" %}selected{% endif %}>{{ cargo.cargo }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button type="button" class="btn btn-outline-secondary me-2" onclick="limparFiltros()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Limpar
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Tabela de Absenteísmo -->
+  <div class="card">
+    <div class="card-header">
+      <h5 class="card-title mb-0">
+        <i class="bi bi-table"></i>
+        Registros de Absenteísmo - {{ competencia }}
+      </h5>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-hover" id="absenteismoTable">
+          <thead>
+            <tr>
+              <th>Funcionário</th>
+              <th>Empresa</th>
+              <th>Lotacao</th>
+              <th>Cargo</th>
+              <th class="text-center">Dias Trabalho</th>
+              <th class="text-center">Dias Falta</th>
+              <th class="text-center">Justificados</th>
+              <th class="text-center">Atrasos</th>
+              <th class="text-center">Saídas Antecipadas</th>
+              <th class="text-center">Extras</th>
+              <th class="text-center">Férias</th>
+              <th class="text-center">Taxa Absenteísmo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in funcionarios_absenteismo %}
+            <tr>
+              <td>
+                <strong>{{ item.funcionario.nome }}</strong>
+                <br>
+                <small class="text-muted">{{ item.funcionario.matricula }}</small>
+              </td>
+              <td>{{ item.funcionario.empresa.empresa }}</td>
+              <td>{{ item.funcionario.lotacao.lotacao }}</td>
+              <td>{{ item.funcionario.cargo.cargo }}</td>
+              <td class="text-center">{{ item.registro.dias_trabalho|default:"0" }}</td>
+              <td class="text-center text-danger">{{ item.registro.dias_falta|default:"0" }}</td>
+              <td class="text-center text-warning">{{ item.registro.dias_justificados|default:"0" }}</td>
+              <td class="text-center text-info">{{ item.registro.dias_atraso|default:"0" }}</td>
+              <td class="text-center text-secondary">{{ item.registro.dias_saida_antecipada|default:"0" }}</td>
+              <td class="text-center text-success">{{ item.registro.dias_extras|default:"0" }}</td>
+              <td class="text-center text-primary">{{ item.registro.dias_ferias|default:"0" }}</td>
+              <td class="text-center">
+                <span class="badge bg-{% if item.taxa_absenteismo > 10 %}danger{% elif item.taxa_absenteismo > 5 %}warning{% else %}success{% endif %}">
+                  {{ item.taxa_absenteismo|floatformat:1 }}%
+                </span>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="12" class="text-center text-muted">
+                <div class="empty-state">
+                  <i class="bi bi-calendar-x text-muted"></i>
+                  <h5>Nenhum registro encontrado</h5>
+                  <p>Não há registros de absenteísmo para a competência selecionada.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function limparFiltros() {
+  window.location.href = window.location.pathname;
+}
+
+function exportarRelatorio() {
+  // Implementar exportação para Excel
+  alert('Funcionalidade de exportação será implementada em breve!');
+}
+</script>
+{% endblock %} 
