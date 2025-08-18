@@ -261,10 +261,7 @@
     }
   }
 
-  /* Correções para problemas de modal - REMOVIDO PARA EVITAR CONFLITOS */
-  /* Usando apenas estilos básicos do Bootstrap */
-
-  /* Correção para problemas de modal-backdrop */
+  /* Correções para problemas de modal */
   .modal-backdrop {
     z-index: 1040 !important;
   }
@@ -273,58 +270,22 @@
     z-index: 1050 !important;
   }
 
-  /* Garantir que múltiplos backdrops sejam removidos */
   .modal-backdrop + .modal-backdrop {
     display: none !important;
   }
 
-  /* Forçar remoção de backdrops órfãos */
   body.modal-open {
     overflow: auto !important;
   }
 
-  /* Estilo para o modal de inscrições */
   #inscricaoModal .modal-dialog {
     max-width: 95%;
     width: 95%;
   }
 
-  /* Melhorar visualização da tabela de inscrições */
   .inscricoes-table {
     max-height: 400px;
     overflow-y: auto;
-  }
-
-  /* Estilo para filtros */
-  .filters-card {
-    background: rgba(248, 250, 252, 0.8);
-    border: 1px solid var(--border-color);
-    border-radius: var(--border-radius);
-    padding: 20px;
-    margin-bottom: 20px;
-  }
-
-  /* Estado vazio da tabela */
-  .empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-secondary);
-  }
-
-  .empty-state i {
-    font-size: 3rem;
-    margin-bottom: 15px;
-    opacity: 0.5;
-  }
-
-  .empty-state h5 {
-    margin-bottom: 10px;
-    color: var(--text-primary);
-  }
-
-  .empty-state p {
-    margin: 0;
-    font-size: 14px;
   }
 </style>
 
@@ -356,6 +317,15 @@
       </select>
     </div>
     <div class="col-lg-3 col-md-6">
+      <label class="form-label">Empresa</label>
+      <select class="form-select" id="id_filter_empresa">
+        <option value="">Todas as empresas</option>
+        {% for empresa in empresas %}
+        <option value="{{ empresa.id }}">{{ empresa.empresa }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-lg-3 col-md-6">
       <label class="form-label">Buscar</label>
       <input type="text" class="form-control" id="id_filter_busca" placeholder="Descrição do evento...">
     </div>
@@ -377,6 +347,7 @@
         <tr>
           <th>Tipo</th>
           <th>Descrição</th>
+          <th>Empresa</th>
           <th>Vagas</th>
           <th>Observação</th>
           <th>Ações</th>
@@ -384,7 +355,7 @@
       </thead>
       <tbody>
         {% for evento in eventos %}
-        <tr>
+        <tr data-tipo-id="{{ evento.tipo.id|stringformat:'s' }}" data-empresa-id="{{ evento.empresa.id|stringformat:'s' }}">
           <td>
             <span class="badge bg-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">
               {{ evento.tipo.tipo_evento|default:"-" }}
@@ -392,6 +363,15 @@
           </td>
           <td>
             <strong>{{ evento.descricao|default:"-" }}</strong>
+          </td>
+          <td>
+            {% if evento.empresa %}
+              <span class="badge bg-info" style="background: linear-gradient(135deg, #4299e1 0%, #3182ce 100%) !important;">
+                {{ evento.empresa.empresa }}
+              </span>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
           </td>
           <td>
             {% if evento.vagas %}
@@ -433,7 +413,7 @@
         </tr>
         {% empty %}
         <tr>
-          <td colspan="5">
+          <td colspan="6">
             <div class="empty-state">
               <i class="bi bi-calendar-x"></i>
               <h5>Nenhum evento encontrado</h5>
@@ -465,6 +445,15 @@
                 <option value="">Selecione...</option>
                 {% for tipo in tipos_evento %}
                 <option value="{{ tipo.id }}">{{ tipo.tipo_evento }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Empresa *</label>
+              <select class="form-select" name="empresa" id="id_empresa" required>
+                <option value="">Selecione...</option>
+                {% for empresa in empresas %}
+                <option value="{{ empresa.id }}">{{ empresa.empresa }}</option>
                 {% endfor %}
               </select>
             </div>
@@ -926,12 +915,12 @@ $(document).ready(function() {
 
     // Remover backdrops quando qualquer modal for aberto
     $('.modal').on('show.bs.modal', function() {
-        removeAllBackdrops();
+        cleanupModalBackdrops();
     });
 
     // Remover backdrops quando qualquer modal for fechado
     $('.modal').on('hidden.bs.modal', function() {
-        removeAllBackdrops();
+        cleanupModalBackdrops();
         document.body.classList.remove('modal-open');
         document.body.style.paddingRight = '';
     });
@@ -939,7 +928,7 @@ $(document).ready(function() {
     // Função de emergência para fechar modal travado
     window.forceCloseModal = function() {
         $('.modal').modal('hide');
-        removeAllBackdrops();
+        cleanupModalBackdrops();
         document.body.classList.remove('modal-open');
         document.body.style.paddingRight = '';
     };
@@ -988,6 +977,11 @@ $(document).ready(function() {
         filtrarFrequencia();
     });
     
+    // Filtros da tabela principal de eventos
+    $('#id_filter_tipo, #id_filter_empresa, #id_filter_busca').on('change keyup', function() {
+        filtrarEventos();
+    });
+    
     // Adicionar tecla de escape para fechar modais
     $(document).on('keydown', function(e) {
         if (e.key === 'Escape') {
@@ -1023,6 +1017,7 @@ function editEvento(id) {
                 $('#id_descricao').val(evento.descricao);
                 $('#id_Obs').val(evento.obs);
                 $('#id_vagas').val(evento.vagas);
+                $('#id_empresa').val(evento.empresa);
                 
                 $('#addEventoModalLabel').text('Editar Evento');
                 $('#addEventoModal').modal('show');
@@ -1042,6 +1037,7 @@ function saveEvento() {
         'descricao': $('#id_descricao').val(),
         'Obs': $('#id_Obs').val(),
         'vagas': $('#id_vagas').val(),
+        'empresa': $('#id_empresa').val(),
         'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()
     };
 
@@ -1108,6 +1104,43 @@ function resetForm() {
     $('#eventoForm')[0].reset();
     eventoIdToEdit = null;
     $('#addEventoModalLabel').text('Adicionar Evento');
+}
+
+// Função para filtrar eventos na tabela principal
+function filtrarEventos() {
+    var filtroTipo = $('#id_filter_tipo').val();
+    var filtroEmpresa = $('#id_filter_empresa').val();
+    var filtroBusca = $('#id_filter_busca').val().toLowerCase();
+    
+    console.log('=== DEBUG: Filtrando eventos - Tipo:', filtroTipo, 'Empresa:', filtroEmpresa, 'Busca:', filtroBusca);
+    
+    $('#eventosTable tbody tr').each(function() {
+        var row = $(this);
+        var tipoId = row.attr('data-tipo-id');
+        var empresaId = row.attr('data-empresa-id');
+        var descricao = row.find('td:nth-child(2)').text().toLowerCase();
+        
+        console.log('=== DEBUG: Linha - Tipo ID:', tipoId, 'Empresa ID:', empresaId, 'Descrição:', descricao);
+        
+        var showRow = true;
+        
+        // Filtro por tipo
+        if (filtroTipo && tipoId !== filtroTipo.toString()) {
+            showRow = false;
+        }
+        
+        // Filtro por empresa
+        if (filtroEmpresa && empresaId !== filtroEmpresa.toString()) {
+            showRow = false;
+        }
+        
+        // Filtro por busca (descrição)
+        if (filtroBusca && !descricao.includes(filtroBusca)) {
+            showRow = false;
+        }
+        
+        row.toggle(showRow);
+    });
 }
 
 function viewObs(obs) {

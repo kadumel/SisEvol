@@ -511,8 +511,117 @@ function desmarcarTodasEmpresas() {
 }
 
 function exportarExcel() {
-  // Implementar exportação para Excel
-  alert('Funcionalidade de exportação será implementada em breve!');
+  // Mostrar indicador de carregamento
+  const btn = event.target || event.currentTarget;
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Gerando...';
+  btn.disabled = true;
+  
+  // Coletar parâmetros dos filtros
+  const form = document.getElementById('filtrosForm');
+  const formData = new FormData(form);
+  
+  // Adicionar parâmetros específicos
+  const params = new URLSearchParams();
+  
+  // Empresas selecionadas
+  const empresasSelecionadas = formData.getAll('empresa');
+  empresasSelecionadas.forEach(empresa => {
+    params.append('empresa', empresa);
+  });
+  
+  // Ano
+  const ano = formData.get('ano') || new Date().getFullYear();
+  params.append('ano', ano);
+  
+  // Meses selecionados
+  const mesesSelecionados = formData.getAll('mes');
+  mesesSelecionados.forEach(mes => {
+    params.append('mes', mes);
+  });
+  
+  // Conta selecionada
+  const conta = formData.get('conta');
+  if (conta) {
+    params.append('conta', conta);
+  }
+  
+  // Construir URL
+  const url = `{% url 'gestao:orcamento_export_excel' %}?${params.toString()}`;
+  
+  // Fazer requisição
+  fetch(url, {
+    method: 'GET',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+    }
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(data => {
+        throw new Error(data.message || 'Erro ao gerar arquivo Excel');
+      });
+    }
+    return response.blob();
+  })
+  .then(blob => {
+    // Criar link para download
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orcamento_${ano}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+    
+    // Restaurar botão
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    
+    // Feedback de sucesso
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+      <i class="bi bi-check-circle"></i>
+      <strong>Sucesso!</strong> Arquivo Excel gerado com sucesso!
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // Remover alerta automaticamente após 3 segundos
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 3000);
+  })
+  .catch(error => {
+    console.error('Erro:', error);
+    
+    // Restaurar botão
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    
+    // Mostrar erro
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+      <i class="bi bi-exclamation-triangle"></i>
+      <strong>Erro!</strong> ${error.message}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alertDiv);
+    
+    // Remover alerta automaticamente após 5 segundos
+    setTimeout(() => {
+      if (alertDiv.parentNode) {
+        alertDiv.remove();
+      }
+    }, 5000);
+  });
 }
 
 // Função para alternar modo tela cheia

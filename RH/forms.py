@@ -27,10 +27,11 @@ class TipoEventoForm(forms.ModelForm):
 class EventoForm(forms.ModelForm):
     class Meta:
         model = Evento
-        fields = ['tipo', 'descricao', 'Obs', 'vagas']
+        fields = ['tipo', 'descricao', 'Obs', 'vagas', 'empresa']
         widgets = {
             'tipo': forms.Select(attrs={'class': 'form-select'}),
             'descricao': forms.TextInput(attrs={'class': 'form-control', 'maxlength': '50'}),
             'Obs': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'maxlength': '250', 'name': 'Obs'}),
-            'vagas': forms.NumberInput(attrs={'class': 'form-control'})
+            'vagas': forms.NumberInput(attrs={'class': 'form-control'}),
+            'empresa': forms.Select(attrs={'class': 'form-select'})
         } 
