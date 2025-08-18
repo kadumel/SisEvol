@@ -8,6 +8,7 @@ __pycache__/
   
 .env
 
+DEV.py
 
 # Distribution / packaging  
 .Python  

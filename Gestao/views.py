@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
@@ -13,6 +13,8 @@ from .models import Orcamento, Conta, CentroCusto, Dre
 from RH.models import Empresa
 from django.db import connection
 from PerfilMenus.views import AcessoAcoes
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
 # Create your views here.
 
@@ -864,3 +866,228 @@ class OrcamentoVisualizacaoView(LoginRequiredMixin, View):
         }
         
         return render(request, self.template_name, context)
+
+
+class ExportOrcamentoExcelView(LoginRequiredMixin, View):
+    """View para exportar dados do orçamento para Excel"""
+    
+    def get(self, request, *args, **kwargs):
+        # Verificar permissão para acessar exportação de orçamento
+        acesso = AcessoAcoes(request, 'Gestao Orçamento', 'Orçamento')
+        if not acesso:
+            return JsonResponse({
+                'status': 'forbidden', 
+                'message': 'Usuário sem permissão para exportar orçamentos'
+            })
+        
+        try:
+            # Parâmetros de filtro - suportando múltipla escolha
+            empresa_list = request.GET.getlist('empresa')
+            ano = request.GET.get('ano', datetime.now().year)
+            mes_list = request.GET.getlist('mes')
+            conta_id = request.GET.get('conta')
+            
+            # Filtrar orçamentos
+            orcamentos = Orcamento.objects.select_related('empresa', 'conta', 'centro_custo')
+            if empresa_list:
+                orcamentos = orcamentos.filter(empresa_id__in=empresa_list)
+            if ano:
+                orcamentos = orcamentos.filter(data__year=ano)
+            if mes_list:
+                orcamentos = orcamentos.filter(data__month__in=mes_list)
+            if conta_id:
+                # Filtrar por conta e suas subcontas
+                try:
+                    conta = Conta.objects.get(id=conta_id)
+                    orcamentos = orcamentos.filter(conta__codigo__startswith=conta.codigo)
+                except Conta.DoesNotExist:
+                    pass
+            
+            # Buscar todas as contas para a tabela (hierarquia completa)
+            todas_contas = Conta.objects.all().order_by('ordem')
+            
+            # Preparar dados para a tabela
+            meses = []
+            
+            # Definir período (ano inteiro ou meses específicos)
+            if mes_list:
+                # Apenas meses selecionados
+                meses = []
+                for mes_num in mes_list:
+                    try:
+                        data_mes = datetime(int(ano), int(mes_num), 1).date()
+                        meses.append(data_mes)
+                    except (ValueError, TypeError):
+                        continue
+                meses.sort()
+            else:
+                # Ano inteiro
+                meses = [datetime(int(ano), m, 1).date() for m in range(1, 13)]
+            
+            # Criar workbook
+            wb = Workbook()
+            ws = wb.active
+            ws.title = f"Orçamento {ano}"
+            
+            # Estilos
+            header_font = Font(bold=True, color="FFFFFF", size=12)
+            header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+            header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            
+            subtitle_font = Font(bold=True, color="FFFFFF", size=10)
+            subtitle_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+            
+            border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+            
+            # Título principal
+            ws.merge_cells('A1:Z1')
+            ws['A1'] = f"RELATÓRIO DE ORÇAMENTO - ANO {ano}"
+            ws['A1'].font = Font(bold=True, size=16)
+            ws['A1'].alignment = Alignment(horizontal="center", vertical="center")
+            
+            # Informações dos filtros
+            row = 2
+            ws.cell(row=row, column=1, value="Filtros Aplicados:")
+            ws.cell(row=row, column=1).font = Font(bold=True)
+            
+            row += 1
+            ws.cell(row=row, column=1, value="Ano:")
+            ws.cell(row=row, column=2, value=ano)
+            
+            row += 1
+            if empresa_list:
+                empresas_filtradas = Empresa.objects.filter(id__in=empresa_list).values_list('empresa', flat=True)
+                ws.cell(row=row, column=1, value="Empresas:")
+                ws.cell(row=row, column=2, value=", ".join(empresas_filtradas))
+            
+            row += 1
+            if mes_list:
+                nomes_meses = []
+                for mes_num in mes_list:
+                    try:
+                        data_mes = datetime(int(ano), int(mes_num), 1).date()
+                        nomes_meses.append(data_mes.strftime('%B'))
+                    except:
+                        continue
+                ws.cell(row=row, column=1, value="Meses:")
+                ws.cell(row=row, column=2, value=", ".join(nomes_meses))
+            
+            row += 2  # Espaço antes da tabela
+            
+            # Cabeçalhos da tabela
+            headers = ['Conta', 'Nível', 'Código']
+            for data_mes in meses:
+                headers.append(data_mes.strftime('%B/%Y'))
+            headers.append('Total Anual')
+            
+            # Aplicar estilos ao cabeçalho
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=row, column=col, value=header)
+                cell.font = header_font
+                cell.fill = header_fill
+                cell.alignment = header_alignment
+                cell.border = border
+            
+            row += 1
+            
+            # Dados da tabela
+            for conta in todas_contas:
+                linha = []
+                linha.append(conta.nome)
+                linha.append(conta.nivel or 0)
+                linha.append(conta.codigo)
+                
+                # Buscar valores para cada mês
+                total_anual = 0
+                for data_mes in meses:
+                    valor = orcamentos.filter(
+                        conta=conta,
+                        data__year=data_mes.year,
+                        data__month=data_mes.month
+                    ).aggregate(total=Sum('valor'))['total'] or 0
+                    
+                    linha.append(valor)
+                    total_anual += valor
+                
+                linha.append(total_anual)
+                
+                # Adicionar linha ao Excel
+                for col, valor in enumerate(linha, 1):
+                    cell = ws.cell(row=row, column=col, value=valor)
+                    cell.border = border
+                    
+                    # Formatação para valores monetários
+                    if col > 3:  # Colunas de valores
+                        if isinstance(valor, (int, float)) and valor != 0:
+                            cell.number_format = '#,##0.00'
+                            if valor < 0:
+                                cell.font = Font(color="FF0000")
+                
+                row += 1
+            
+            # Linha de totais
+            ws.cell(row=row, column=1, value="TOTAIS")
+            ws.cell(row=row, column=1).font = Font(bold=True)
+            ws.cell(row=row, column=2, value="")
+            ws.cell(row=row, column=3, value="")
+            
+            total_geral = 0
+            for col, data_mes in enumerate(meses, 4):
+                total = orcamentos.filter(
+                    data__year=data_mes.year,
+                    data__month=data_mes.month
+                ).aggregate(total=Sum('valor'))['total'] or 0
+                
+                cell = ws.cell(row=row, column=col, value=total)
+                cell.font = Font(bold=True)
+                cell.fill = subtitle_fill
+                cell.font = subtitle_font
+                cell.border = border
+                cell.number_format = '#,##0.00'
+                
+                total_geral += total
+            
+            # Total geral
+            cell = ws.cell(row=row, column=len(headers), value=total_geral)
+            cell.font = Font(bold=True)
+            cell.fill = subtitle_fill
+            cell.font = subtitle_font
+            cell.border = border
+            cell.number_format = '#,##0.00'
+            
+            # Ajustar largura das colunas
+            for column in ws.columns:
+                max_length = 0
+                column_letter = column[0].column_letter
+                for cell in column:
+                    try:
+                        if len(str(cell.value)) > max_length:
+                            max_length = len(str(cell.value))
+                    except:
+                        pass
+                adjusted_width = min(max_length + 2, 50)
+                ws.column_dimensions[column_letter].width = adjusted_width
+            
+            # Criar resposta
+            filename = f"orcamento_{ano}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+            
+            response = HttpResponse(
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            wb.save(response)
+            return response
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Erro ao gerar arquivo Excel: {str(e)}'
+            }, status=500)

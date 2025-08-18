@@ -129,7 +129,8 @@ class GetEventoView(LoginRequiredMixin, View):
                 'tipo': evento.tipo.id,
                 'descricao': evento.descricao,
                 'obs': evento.Obs or '',
-                'vagas': evento.vagas or ''
+                'vagas': evento.vagas or '',
+                'empresa': evento.empresa.id
             }
             return JsonResponse({'status': 'success', 'evento': evento_data})
         except Exception as e:
@@ -244,7 +245,7 @@ class ExportEventosExcelView(LoginRequiredMixin, View):
             ws.title = "Eventos"
             
             # Cabeçalhos
-            headers = ['Tipo', 'Descrição', 'Vagas', 'Observação', 'Data Criação']
+            headers = ['Tipo', 'Descrição', 'Empresa', 'Vagas', 'Observação', 'Data Criação']
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=1, column=col, value=header)
                 cell.font = Font(bold=True)
@@ -255,9 +256,10 @@ class ExportEventosExcelView(LoginRequiredMixin, View):
             for row, evento in enumerate(eventos, 2):
                 ws.cell(row=row, column=1, value=evento.tipo.tipo_evento if evento.tipo else '')
                 ws.cell(row=row, column=2, value=evento.descricao)
-                ws.cell(row=row, column=3, value=evento.vagas)
-                ws.cell(row=row, column=4, value=evento.Obs)
-                ws.cell(row=row, column=5, value=evento.created.strftime('%d/%m/%Y %H:%M') if evento.created else '')
+                ws.cell(row=row, column=3, value=evento.empresa.empresa if evento.empresa else '')
+                ws.cell(row=row, column=4, value=evento.vagas)
+                ws.cell(row=row, column=5, value=evento.Obs)
+                ws.cell(row=row, column=6, value=evento.created.strftime('%d/%m/%Y %H:%M') if evento.created else '')
             
             # Ajustar largura das colunas
             for column in ws.columns:
