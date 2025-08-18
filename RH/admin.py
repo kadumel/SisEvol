@@ -46,8 +46,15 @@ admin.site.register(Funcionario)
 admin.site.register(Gestor)
 
 admin.site.register(TipoEvento)
-admin.site.register(Evento)
 admin.site.register(ControleEvento)
 admin.site.register(Auditoria)
+
+# Configuração personalizada para Evento
+@admin.register(Evento)
+class EventoAdmin(admin.ModelAdmin):
+    list_display = ['tipo', 'descricao', 'empresa', 'vagas', 'created']
+    list_filter = ['tipo', 'empresa', 'created']
+    search_fields = ['descricao', 'Obs']
+    ordering = ['-created']
 
 

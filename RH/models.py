@@ -202,6 +202,7 @@ class Evento(models.Model):
     Obs = models.TextField('Observação',max_length=250)
     vagas = models.IntegerField('Vagas', null=True, blank=True)
     usuario = models.ForeignKey(User, on_delete=models.PROTECT, null=True, blank=True)
+    empresa = models.ForeignKey(Empresa, on_delete=models.CASCADE)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated = models.DateTimeField(auto_now=True, null=True, blank=True)
     
