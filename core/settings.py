@@ -44,7 +44,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',  # Deve vir antes do django.contrib.admin
+   # 'jazzmin',  # Deve vir antes do django.contrib.admin
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
