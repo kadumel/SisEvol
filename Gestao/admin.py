@@ -38,6 +38,7 @@ def geraOrcMesSeguinte(modeladmin, request, queryset):
             data = dt + relativedelta(months=1),
             valor = orc.valor,
             conta = orc.conta,
+            centro_custo = orc.centro_custo,
             empresa = orc.empresa
         )
         
@@ -215,7 +216,7 @@ class OrcamentoAdmin(DateHierarchyCurrentMonthMixin, admin.ModelAdmin):
     actions = [geraOrcMesSeguinte, recalcularOtimistaRealista]
     search_fields = ('conta__nome',) 
     list_editable = ('valor','centro_custo')
-    list_per_page = 200
+    list_per_page = 500
     date_hierarchy = 'data'
     
     def save_model(self, request, obj, form, change):
