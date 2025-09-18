@@ -13,6 +13,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment
 from ..forms import FuncionarioForm
 from django.db import connection
+from django.db.models import Q
 import json
 
 # Create your views here.
@@ -1669,24 +1670,24 @@ class DashboardRHView(LoginRequiredMixin, View):
                 dt_demissao__lte=data_fim
             ).count()
             
-            # Calcular turnover mensal
-            if funcionarios_ativos > 0:
-                turnover_mensal = round((demissoes_mes / funcionarios_ativos) * 100, 2)
-            
-            # Calcular turnover anual (últimos 12 meses)
-            data_inicio_ano = datetime(int(ano), 1, 1).date()
-            admissoes_ano = funcionarios.filter(
-                dt_admissao__gte=data_inicio_ano,
+            # Nº médio de colaboradores no mês (aproximação: empregados com admissão até o fim do mês e sem demissão antes do início)
+            colaboradores_medios_mes = funcionarios.filter(
                 dt_admissao__lte=data_fim
+            ).filter(
+                Q(dt_demissao__isnull=True) | Q(dt_demissao__gte=data_inicio)
             ).count()
             
-            demissoes_ano = funcionarios.filter(
-                dt_demissao__gte=data_inicio_ano,
-                dt_demissao__lte=data_fim
-            ).count()
+            # Calcular turnover mensal pela fórmula: ((Admissões + Desligamentos) / 2) / Nº Médio de Colaboradores * 100
+            if colaboradores_medios_mes > 0:
+                turnover_mensal = round((((admissoes_mes + demissoes_mes) / 2) / funcionarios_ativos) * 100, 2)
             
-            if funcionarios_ativos > 0:
-                turnover_anual = round(((admissoes_ano + demissoes_ano) / 2 / funcionarios_ativos) * 100, 2)
+            print('--------------------------------Mensal--------------------------------')
+            print(admissoes_mes, demissoes_mes, colaboradores_medios_mes, funcionarios_ativos)
+            # Preparar agregadores para turnover anual ponderado por mês
+            total_admissoes_mes = 0
+            total_demissoes_mes = 0
+            total_headcount_medio_mes = 0
+            meses_contados = 0
             
             # Calcular evolução do turnover mês a mês do ano selecionado
             # Determinar até qual mês calcular baseado no ano atual
@@ -1710,28 +1711,52 @@ class DashboardRHView(LoginRequiredMixin, View):
                 else:
                     data_fim_mes = datetime(int(ano), mes_atual + 1, 1).date() - timedelta(days=1)
                 
-                # Calcular funcionários ativos no início do mês (aproximação)
-                # Para simplificar, usamos o total atual de funcionários ativos
-                # Em uma implementação mais precisa, seria necessário calcular o efetivo de cada mês
-                funcionarios_ativos_mes = funcionarios_ativos
+                # Nº médio de colaboradores do mês (aproximação) com base na presença no período
+                funcionarios_ativos_mes = funcionarios.filter(
+                    dt_admissao__lte=data_fim_mes
+                ).filter(
+                    Q(dt_demissao__isnull=True) | Q(dt_demissao__gte=data_inicio_mes)
+                ).count()
                 
-                # Funcionários que saíram no mês
+                # Funcionários que entraram e saíram no mês
+                admissoes_mes_atual = funcionarios.filter(
+                    dt_admissao__gte=data_inicio_mes,
+                    dt_admissao__lte=data_fim_mes
+                ).count()
                 demissoes_mes_atual = funcionarios.filter(
                     dt_demissao__gte=data_inicio_mes,
                     dt_demissao__lte=data_fim_mes
                 ).count()
                 
-                # Calcular turnover do mês
+                # Acumular para médias anuais
+                total_admissoes_mes += admissoes_mes_atual
+                total_demissoes_mes += demissoes_mes_atual
+                total_headcount_medio_mes += funcionarios_ativos_mes
+                meses_contados += 1
+                
+               
+                # Calcular turnover do mês pela fórmula solicitada
                 turnover_mes = 0
                 if funcionarios_ativos_mes > 0:
-                    turnover_mes = round((demissoes_mes_atual / funcionarios_ativos_mes) * 100, 2)
+                    turnover_mes = round((((admissoes_mes_atual + demissoes_mes_atual) / 2) / funcionarios_ativos_mes) * 100, 2)
                 
+                print('--------------------------------Anual--------------------------------')
+                print(admissoes_mes_atual, demissoes_mes_atual, funcionarios_ativos_mes, turnover_mes)
+
                 turnover_evolucao.append({
                     'mes': mes_atual,
                     'nome_mes': datetime(int(ano), mes_atual, 1).strftime('%b'),
                     'turnover': turnover_mes,
                     'demissoes': demissoes_mes_atual
                 })
+
+            # Calcular turnover anual com médias mensais de admissões e demissões, ponderado pelo headcount médio mensal
+            if meses_contados > 0:
+                media_admissoes = total_admissoes_mes / meses_contados
+                media_demissoes = total_demissoes_mes / meses_contados
+                media_headcount = total_headcount_medio_mes / meses_contados
+                if media_headcount > 0:
+                    turnover_anual = round((((media_admissoes + media_demissoes) / 2) / media_headcount) * 100, 2)
         
         # Indicadores por empresa
         funcionarios_por_empresa = {}
