@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ prato.nome }} - Cardápio{% endblock %}
+
+{% block content %}
+<div class="prato-detail-container">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-nav">
+        <div class="breadcrumb-content">
+            <a href="{% url 'cardapio:index' %}" class="breadcrumb-link">Cardápio</a>
+            <i class="bi bi-chevron-right"></i>
+            <a href="{% url 'cardapio:categoria' prato.categoria.id %}" class="breadcrumb-link">{{ prato.categoria.nome }}</a>
+            <i class="bi bi-chevron-right"></i>
+            <span class="breadcrumb-current">{{ prato.nome }}</span>
+        </div>
+    </nav>
+
+    <!-- Header do Prato -->
+    <div class="prato-header">
+        <div class="prato-header-content">
+            <div class="prato-main-info">
+                <div class="prato-categoria-badge" style="--categoria-cor: {{ prato.categoria.cor }}">
+                    <i class="bi {{ prato.categoria.icone|default:'bi-grid-3x3-gap' }}"></i>
+                    <span>{{ prato.categoria.nome }}</span>
+                </div>
+                
+                <h1 class="prato-nome">{{ prato.nome }}</h1>
+                
+                {% if prato.destaque %}
+                <div class="destaque-badge">
+                    <i class="bi bi-star-fill"></i>
+                    <span>Prato em Destaque</span>
+                </div>
+                {% endif %}
+                
+                <p class="prato-descricao">{{ prato.descricao }}</p>
+                
+                <div class="prato-preco">
+                    <span class="preco-valor">R$ {{ prato.preco|floatformat:2 }}</span>
+                    <span class="preco-tamanho">{{ prato.get_tamanho_display }}</span>
+                </div>
+            </div>
+            
+            {% if prato.imagem %}
+            <div class="prato-imagem-container">
+                <img src="{{ prato.imagem }}" alt="{{ prato.nome }}" class="prato-imagem">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Informações Detalhadas -->
+    <div class="prato-details">
+        <div class="details-grid">
+            <!-- Características -->
+            <div class="detail-card">
+                <h3 class="detail-title">
+                    <i class="bi bi-info-circle"></i>
+                    Características
+                </h3>
+                <div class="detail-content">
+                    {% if prato.calorias %}
+                    <div class="detail-item">
+                        <i class="bi bi-fire"></i>
+                        <span class="detail-label">Calorias:</span>
+                        <span class="detail-value">{{ prato.calorias }} cal</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if prato.tempo_preparo %}
+                    <div class="detail-item">
+                        <i class="bi bi-clock"></i>
+                        <span class="detail-label">Tempo de preparo:</span>
+                        <span class="detail-value">{{ prato.tempo_preparo }} minutos</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if prato.nivel_picante > 0 %}
+                    <div class="detail-item">
+                        <i class="bi bi-emoji-angry"></i>
+                        <span class="detail-label">Nível de picante:</span>
+                        <span class="detail-value">{{ prato.nivel_picante_display }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Ingredientes -->
+            <div class="detail-card">
+                <h3 class="detail-title">
+                    <i class="bi bi-list-ul"></i>
+                    Ingredientes
+                </h3>
+                <div class="detail-content">
+                    <div class="ingredientes-list">
+                        {% for ingrediente in prato.ingredientes_list %}
+                        <span class="ingrediente-item">{{ ingrediente }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Restrições Alimentares -->
+            <div class="detail-card">
+                <h3 class="detail-title">
+                    <i class="bi bi-shield-check"></i>
+                    Restrições Alimentares
+                </h3>
+                <div class="detail-content">
+                    <div class="restricoes-grid">
+                        <div class="restricao-item {% if prato.vegetariano %}ativo{% endif %}">
+                            <i class="bi bi-leaf"></i>
+                            <span>Vegetariano</span>
+                        </div>
+                        <div class="restricao-item {% if prato.vegano %}ativo{% endif %}">
+                            <i class="bi bi-tree"></i>
+                            <span>Vegano</span>
+                        </div>
+                        <div class="restricao-item {% if prato.sem_gluten %}ativo{% endif %}">
+                            <i class="bi bi-x-circle"></i>
+                            <span>Sem Glúten</span>
+                        </div>
+                        <div class="restricao-item {% if prato.sem_lactose %}ativo{% endif %}">
+                            <i class="bi bi-droplet"></i>
+                            <span>Sem Lactose</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Avaliações -->
+    {% if avaliacoes %}
+    <div class="avaliacoes-section">
+        <div class="avaliacoes-header">
+            <h3 class="avaliacoes-title">
+                <i class="bi bi-star"></i>
+                Avaliações
+            </h3>
+            <div class="avaliacoes-stats">
+                <div class="nota-media">
+                    <span class="nota-numero">{{ media_avaliacoes|floatformat:1 }}</span>
+                    <div class="estrelas">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= media_avaliacoes %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <span class="total-avaliacoes">{{ avaliacoes.count }} avaliações</span>
+            </div>
+        </div>
+        
+        <div class="avaliacoes-list">
+            {% for avaliacao in avaliacoes %}
+            <div class="avaliacao-item">
+                <div class="avaliacao-header">
+                    <div class="avaliacao-autor">
+                        <strong>{{ avaliacao.nome }}</strong>
+                    </div>
+                    <div class="avaliacao-nota">
+                        {% for i in "12345" %}
+                            {% if forloop.counter <= avaliacao.nota %}
+                                <i class="bi bi-star-fill"></i>
+                            {% else %}
+                                <i class="bi bi-star"></i>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                {% if avaliacao.comentario %}
+                <div class="avaliacao-comentario">
+                    {{ avaliacao.comentario }}
+                </div>
+                {% endif %}
+                <div class="avaliacao-data">
+                    {{ avaliacao.created_at|date:"d/m/Y" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Ações -->
+    <div class="prato-actions">
+        <a href="{% url 'cardapio:categoria' prato.categoria.id %}" class="btn-voltar">
+            <i class="bi bi-arrow-left"></i>
+            Voltar para {{ prato.categoria.nome }}
+        </a>
+        
+        <a href="{% url 'cardapio:ficha_tecnica' prato.id %}" class="btn-ficha-tecnica">
+            <i class="bi bi-clipboard-data"></i>
+            Ficha Técnica
+        </a>
+        
+        <a href="{% url 'cardapio:index' %}" class="btn-cardapio">
+            <i class="bi bi-grid-3x3-gap"></i>
+            Ver Cardápio Completo
+        </a>
+    </div>
+</div>
+
+<style>
+/* Estilos do Prato */
+.prato-detail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Breadcrumb */
+.breadcrumb-nav {
+    margin-bottom: 30px;
+}
+
+.breadcrumb-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #5a67d8;
+}
+
+.breadcrumb-current {
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.breadcrumb-content i {
+    color: #cbd5e0;
+    font-size: 0.8rem;
+}
+
+/* Header do Prato */
+.prato-header {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.prato-header-content {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: start;
+}
+
+.prato-main-info {
+    flex: 1;
+}
+
+.prato-categoria-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--categoria-cor);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.prato-nome {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 15px;
+    line-height: 1.2;
+}
+
+.destaque-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(255, 154, 86, 0.4);
+}
+
+.prato-descricao {
+    font-size: 1.1rem;
+    color: #718096;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.prato-preco {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.preco-valor {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.preco-tamanho {
+    background: #f7fafc;
+    color: #667eea;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.prato-imagem-container {
+    width: 300px;
+    height: 300px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.prato-imagem {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Detalhes */
+.prato-details {
+    margin-bottom: 40px;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.detail-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 20px;
+}
+
+.detail-title i {
+    color: #667eea;
+}
+
+.detail-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.detail-item i {
+    color: #667eea;
+    font-size: 1.1rem;
+    width: 20px;
+}
+
+.detail-label {
+    font-weight: 600;
+    color: #4a5568;
+    min-width: 120px;
+}
+
+.detail-value {
+    color: #718096;
+}
+
+/* Ingredientes */
+.ingredientes-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.ingrediente-item {
+    background: #f7fafc;
+    color: #4a5568;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    border: 1px solid #e2e8f0;
+}
+
+/* Restrições */
+.restricoes-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.restricao-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: #f7fafc;
+    color: #a0aec0;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.restricao-item.ativo {
+    background: #e6fffa;
+    color: #00a86b;
+    border: 1px solid #b2f5ea;
+}
+
+.restricao-item i {
+    font-size: 1.1rem;
+}
+
+/* Avaliações */
+.avaliacoes-section {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.avaliacoes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.avaliacoes-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.avaliacoes-title i {
+    color: #ffd700;
+}
+
+.avaliacoes-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nota-media {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nota-numero {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.estrelas {
+    display: flex;
+    gap: 2px;
+}
+
+.estrelas i {
+    color: #ffd700;
+    font-size: 1.1rem;
+}
+
+.total-avaliacoes {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.avaliacoes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.avaliacao-item {
+    padding: 20px;
+    background: #f7fafc;
+    border-radius: 15px;
+    border: 1px solid #e2e8f0;
+}
+
+.avaliacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.avaliacao-autor {
+    color: #2d3748;
+}
+
+.avaliacao-nota {
+    display: flex;
+    gap: 2px;
+}
+
+.avaliacao-nota i {
+    color: #ffd700;
+    font-size: 0.9rem;
+}
+
+.avaliacao-comentario {
+    color: #4a5568;
+    line-height: 1.5;
+    margin-bottom: 10px;
+}
+
+.avaliacao-data {
+    color: #a0aec0;
+    font-size: 0.8rem;
+}
+
+/* Ações */
+.prato-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+
+.btn-voltar, .btn-cardapio {
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-voltar {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-voltar:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.btn-cardapio {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-cardapio:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-ficha-tecnica {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-ficha-tecnica:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+    color: white;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .prato-header-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .prato-imagem-container {
+        width: 100%;
+        height: 250px;
+    }
+    
+    .prato-nome {
+        font-size: 2rem;
+    }
+    
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .restricoes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .avaliacoes-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .prato-actions {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}

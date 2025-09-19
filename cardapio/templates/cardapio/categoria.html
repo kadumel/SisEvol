@@ -1,0 +1,691 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ categoria.nome }} - Cardápio{% endblock %}
+
+{% block content %}
+<div class="categoria-container">
+    <!-- Header da Categoria -->
+    <div class="categoria-header" style="--categoria-cor: {{ categoria.cor }}">
+        <div class="categoria-header-content">
+            <div class="categoria-info">
+                <div class="categoria-icone">
+                    <i class="bi {{ categoria.icone|default:'bi-grid-3x3-gap' }}"></i>
+                </div>
+                <div class="categoria-details">
+                    <h1 class="categoria-nome">{{ categoria.nome }}</h1>
+                    {% if categoria.descricao %}
+                    <p class="categoria-descricao">{{ categoria.descricao }}</p>
+                    {% endif %}
+                    <div class="categoria-stats">
+                        <span class="pratos-count">{{ pratos.count }} pratos disponíveis</span>
+                    </div>
+                </div>
+            </div>
+            <div class="categoria-actions">
+                <a href="{% url 'cardapio:index' %}" class="btn-voltar">
+                    <i class="bi bi-arrow-left"></i>
+                    Voltar ao Cardápio
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filtros-section">
+        <div class="filtros-container">
+            <form method="GET" class="filtros-form">
+                <div class="filtros-row">
+                    <div class="filtro-group">
+                        <label class="filtro-label">Buscar:</label>
+                        <input type="text" name="busca" value="{{ filtros.busca }}" placeholder="Nome, descrição ou ingredientes..." class="filtro-input">
+                    </div>
+                    
+                    <div class="filtros-checkboxes">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="vegetariano" {% if filtros.vegetariano %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                            Vegetariano
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="vegano" {% if filtros.vegano %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                            Vegano
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="sem_gluten" {% if filtros.sem_gluten %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                            Sem Glúten
+                        </label>
+                        
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="sem_lactose" {% if filtros.sem_lactose %}checked{% endif %}>
+                            <span class="checkmark"></span>
+                            Sem Lactose
+                        </label>
+                    </div>
+                    
+                    <button type="submit" class="btn-filtrar">
+                        <i class="bi bi-funnel"></i>
+                        Filtrar
+                    </button>
+                    
+                    {% if filtros.busca or filtros.vegetariano or filtros.vegano or filtros.sem_gluten or filtros.sem_lactose %}
+                    <a href="{% url 'cardapio:categoria' categoria.id %}" class="btn-limpar">
+                        <i class="bi bi-x-circle"></i>
+                        Limpar
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Pratos -->
+    <div class="pratos-section">
+        {% if pratos %}
+        <div class="pratos-grid">
+            {% for prato in pratos %}
+            <div class="prato-card" onclick="abrirPrato({{ prato.id }})">
+                {% if prato.imagem %}
+                <div class="prato-imagem">
+                    <img src="{{ prato.imagem }}" alt="{{ prato.nome }}">
+                    {% if prato.destaque %}
+                    <div class="destaque-badge">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                
+                <div class="prato-info">
+                    <h3 class="prato-nome">{{ prato.nome }}</h3>
+                    <p class="prato-descricao">{{ prato.descricao|truncatewords:20 }}</p>
+                    
+                    <div class="prato-detalhes">
+                        {% if prato.calorias %}
+                        <span class="prato-calorias">
+                            <i class="bi bi-fire"></i>
+                            {{ prato.calorias }} cal
+                        </span>
+                        {% endif %}
+                        
+                        {% if prato.tempo_preparo %}
+                        <span class="prato-tempo">
+                            <i class="bi bi-clock"></i>
+                            {{ prato.tempo_preparo }} min
+                        </span>
+                        {% endif %}
+                        
+                        {% if prato.nivel_picante > 0 %}
+                        <span class="prato-picante">
+                            {{ prato.nivel_picante_display }}
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="prato-meta">
+                        <div class="prato-preco">R$ {{ prato.preco|floatformat:2 }}</div>
+                        <div class="prato-tamanho">{{ prato.get_tamanho_display }}</div>
+                    </div>
+                    
+                    <div class="prato-tags">
+                        {% if prato.vegetariano %}<span class="tag vegetariano">Vegetariano</span>{% endif %}
+                        {% if prato.vegano %}<span class="tag vegano">Vegano</span>{% endif %}
+                        {% if prato.sem_gluten %}<span class="tag sem-gluten">Sem Glúten</span>{% endif %}
+                        {% if prato.sem_lactose %}<span class="tag sem-lactose">Sem Lactose</span>{% endif %}
+                    </div>
+                    
+                    <div class="prato-ingredientes">
+                        <strong>Ingredientes:</strong>
+                        <span>{{ prato.ingredientes|truncatewords:10 }}</span>
+                    </div>
+                    
+                    <div class="prato-actions">
+                        <a class="btn-ficha-tecnica" href="{% url 'cardapio:ficha_tecnica' prato.id %}" onclick="event.stopPropagation()">
+                            <i class="bi bi-clipboard-data"></i>
+                            Ficha Técnica
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="sem-resultados">
+            <div class="sem-resultados-content">
+                <i class="bi bi-search"></i>
+                <h3>Nenhum prato encontrado</h3>
+                <p>Tente ajustar os filtros ou buscar por outros termos</p>
+                <a href="{% url 'cardapio:categoria' categoria.id %}" class="btn-limpar-filtros">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Limpar Filtros
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+/* Estilos da Categoria */
+.categoria-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header da Categoria */
+.categoria-header {
+    background: linear-gradient(135deg, var(--categoria-cor) 0%, color-mix(in srgb, var(--categoria-cor) 80%, black) 100%);
+    color: white;
+    padding: 60px 0;
+    border-radius: 20px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.categoria-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.categoria-header-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.categoria-info {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.categoria-icone {
+    width: 80px;
+    height: 80px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.categoria-details {
+    flex: 1;
+}
+
+.categoria-nome {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.categoria-descricao {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 15px;
+}
+
+.categoria-stats {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+}
+
+.pratos-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-voltar {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-voltar:hover {
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Filtros */
+.filtros-section {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 40px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.filtros-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.filtros-form {
+    width: 100%;
+}
+
+.filtros-row {
+    display: flex;
+    align-items: end;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.filtro-group {
+    flex: 1;
+    min-width: 250px;
+}
+
+.filtro-label {
+    display: block;
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.filtro-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.filtro-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.filtros-checkboxes {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: #667eea;
+    border-color: #667eea;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.btn-filtrar, .btn-limpar {
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-filtrar {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-filtrar:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.btn-limpar {
+    background: #f7fafc;
+    color: #718096;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-limpar:hover {
+    background: #edf2f7;
+    color: #4a5568;
+}
+
+/* Grid de Pratos */
+.pratos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+.prato-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+}
+
+.prato-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.prato-imagem {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.prato-imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.prato-card:hover .prato-imagem img {
+    transform: scale(1.05);
+}
+
+.destaque-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 154, 86, 0.4);
+}
+
+.prato-info {
+    padding: 25px;
+}
+
+.prato-nome {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.prato-descricao {
+    color: #718096;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.prato-detalhes {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.prato-detalhes span {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+.prato-detalhes i {
+    color: #667eea;
+}
+
+.prato-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.prato-preco {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.prato-tamanho {
+    background: #f7fafc;
+    color: #667eea;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.prato-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tag.vegetariano {
+    background: #e6fffa;
+    color: #00a86b;
+}
+
+.tag.vegano {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.tag.sem-gluten {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
+.tag.sem-lactose {
+    background: #fef5e7;
+    color: #dd6b20;
+}
+
+.prato-ingredientes {
+    font-size: 0.9rem;
+    color: #718096;
+    line-height: 1.5;
+}
+
+.prato-ingredientes strong {
+    color: #4a5568;
+}
+
+/* Ações do Prato */
+.prato-actions {
+    margin-top: 15px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-ficha-tecnica {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-ficha-tecnica:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    color: white;
+}
+
+.btn-ficha-tecnica i {
+    font-size: 0.9rem;
+}
+
+/* Sem Resultados */
+.sem-resultados {
+    text-align: center;
+    padding: 80px 20px;
+}
+
+.sem-resultados-content {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.sem-resultados i {
+    font-size: 4rem;
+    color: #cbd5e0;
+    margin-bottom: 20px;
+}
+
+.sem-resultados h3 {
+    font-size: 1.5rem;
+    color: #4a5568;
+    margin-bottom: 10px;
+}
+
+.sem-resultados p {
+    color: #718096;
+    margin-bottom: 30px;
+}
+
+.btn-limpar-filtros {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-limpar-filtros:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .categoria-header-content {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .categoria-nome {
+        font-size: 2rem;
+    }
+    
+    .filtros-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .filtros-checkboxes {
+        justify-content: center;
+    }
+    
+    .pratos-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .prato-detalhes {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+function abrirPrato(pratoId) {
+    window.location.href = `/cardapio/prato/${pratoId}/`;
+}
+
+function abrirFichaTecnica(pratoId) {
+    window.location.href = `/cardapio/ficha-tecnica/${pratoId}/`;
+}
+</script>
+{% endblock %}

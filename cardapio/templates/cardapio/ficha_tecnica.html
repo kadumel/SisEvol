@@ -1,0 +1,630 @@
+
+{% load static %}
+
+
+<div class="ficha-tecnica-container">
+    <!-- Breadcrumb -->
+
+    <!-- Header da Ficha Técnica -->
+    <div class="ficha-header">
+        <div class="ficha-header-content">
+            <div class="ficha-title-section">
+                <div class="ficha-categoria-badge" style="--categoria-cor: {{ prato.categoria.cor }}">
+                    <i class="bi {{ prato.categoria.icone|default:'bi-grid-3x3-gap' }}"></i>
+                    <span>{{ prato.categoria.nome }}</span>
+                </div>
+                
+                <h1 class="ficha-titulo">{{ prato.nome }}</h1>
+                {% if prato.descricao %}
+                <p class="ficha-descricao">{{ prato.descricao }}</p>
+                {% endif %}
+                
+                <div class="ficha-meta-info">
+                    <div class="meta-item">
+                        <i class="bi bi-people"></i>
+                        <span>{{ prato.rendimento|default:"N/A" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-clock"></i>
+                        <span>{{ prato.tempo_preparo_total|default:prato.tempo_preparo|default:"N/A" }} min</span>
+                    </div>
+                    <div class="meta-item">
+                        <i class="bi bi-thermometer"></i>
+                        <span>{{ prato.temperatura_servico|default:"N/A" }}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="dificuldade-badge {{ prato.dificuldade }}">
+                            {{ prato.dificuldade_display }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            {% if prato.imagem %}
+            <div class="ficha-imagem-container">
+                <img src="{{ prato.imagem }}" alt="{{ prato.nome }}" class="ficha-imagem">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Conteúdo da Ficha Técnica -->
+    <div class="ficha-content">
+        <div class="ficha-grid">
+            <!-- Quantitativo de Ingredientes -->
+            <div class="ficha-section quantitativo-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="bi bi-calculator"></i>
+                        Quantitativo de Ingredientes
+                    </h2>
+                </div>
+                <div class="quantitativo-content">
+                    {% if prato.quantitativo_ingredientes_list %}
+                        {% for item in prato.quantitativo_ingredientes_list %}
+                        <div class="quantitativo-item">
+                            <i class="bi bi-dot"></i>
+                            <span>{{ item }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        {% for ingrediente in prato.ingredientes_list %}
+                        <div class="quantitativo-item">
+                            <i class="bi bi-dot"></i>
+                            <span>{{ ingrediente }}</span>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Utensílios -->
+            {% if prato.utensilios_list %}
+            <div class="ficha-section utensilios-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="bi bi-tools"></i>
+                        Utensílios Necessários
+                    </h2>
+                </div>
+                <div class="utensilios-grid">
+                    {% for utensilio in prato.utensilios_list %}
+                    <div class="utensilio-item">
+                        <i class="bi bi-gear"></i>
+                        <span>{{ utensilio }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Modo de Preparo -->
+            {% if prato.modo_preparo_list %}
+            <div class="ficha-section preparo-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="bi bi-list-ol"></i>
+                        Modo de Preparo
+                    </h2>
+                </div>
+                <div class="preparo-steps">
+                    {% for passo in prato.modo_preparo_list %}
+                    <div class="preparo-step">
+                        <div class="step-number">{{ forloop.counter }}</div>
+                        <div class="step-content">
+                            <p>{{ passo }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Montagem do Prato -->
+            {% if prato.montagem_prato_list %}
+            <div class="ficha-section montagem-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="bi bi-layers"></i>
+                        Montagem do Prato
+                    </h2>
+                </div>
+                <div class="montagem-steps">
+                    {% for passo in prato.montagem_prato_list %}
+                    <div class="montagem-step">
+                    <div class="step-icon">
+                        <i class="bi bi-dot"></i>
+                    </div>
+                        <div class="step-content">
+                            <p>{{ passo }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+
+    <!-- Ações -->
+    <div class="ficha-actions">
+        <a href="{% url 'cardapio:prato' prato.id %}" class="btn-voltar">
+            <i class="bi bi-arrow-left"></i>
+            Ver Detalhes do Prato
+        </a>
+        
+        <a href="{% url 'cardapio:categoria' prato.categoria.id %}" class="btn-categoria">
+            <i class="bi bi-grid-3x3-gap"></i>
+            Ver {{ prato.categoria.nome }}
+        </a>
+        
+        <a href="{% url 'cardapio:index' %}" class="btn-cardapio">
+            <i class="bi bi-menu-button-wide"></i>
+            Cardápio Completo
+        </a>
+    </div>
+</div>
+
+<style>
+/* Estilos da Ficha Técnica */
+.ficha-tecnica-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Breadcrumb */
+.breadcrumb-nav {
+    margin-bottom: 30px;
+}
+
+.breadcrumb-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9rem;
+}
+
+.breadcrumb-link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+}
+
+.breadcrumb-link:hover {
+    color: #5a67d8;
+}
+
+.breadcrumb-current {
+    color: #4a5568;
+    font-weight: 600;
+}
+
+.breadcrumb-content i {
+    color: #cbd5e0;
+    font-size: 0.8rem;
+}
+
+/* Header da Ficha */
+.ficha-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 50px 40px;
+    border-radius: 20px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.ficha-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.ficha-header-content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 40px;
+    align-items: start;
+}
+
+.ficha-title-section {
+    flex: 1;
+}
+
+.ficha-categoria-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--categoria-cor);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 20px;
+}
+
+.ficha-titulo {
+    font-size: 2.8rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    line-height: 1.2;
+}
+
+.ficha-descricao {
+    margin-top: -10px;
+    margin-bottom: 20px;
+    font-size: 1.05rem;
+    color: #edf2f7;
+    max-width: 60ch;
+}
+
+.ficha-meta-info {
+    display: flex;
+    gap: 30px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.meta-item i {
+    font-size: 1.1rem;
+}
+
+.dificuldade-badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.dificuldade-badge.facil {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.dificuldade-badge.medio {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.dificuldade-badge.dificil {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.ficha-imagem-container {
+    width: 300px;
+    height: 300px;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+.ficha-imagem {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Conteúdo da Ficha */
+.ficha-content {
+    margin-bottom: 40px;
+}
+
+.ficha-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 30px;
+}
+
+.ficha-section {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+}
+
+.section-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+.section-title i {
+    color: #667eea;
+    font-size: 1.2rem;
+}
+
+/* Quantitativo de Ingredientes */
+.quantitativo-content {
+    background: #fef3c7;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #fde68a;
+}
+
+.quantitativo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding: 8px 0;
+    border-bottom: 1px solid #fbbf24;
+}
+
+.quantitativo-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.quantitativo-item i {
+    color: #d97706;
+    font-size: 1.2rem;
+    margin-top: 2px;
+}
+
+.quantitativo-item span {
+    font-weight: 600;
+    color: #92400e;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* Utensílios */
+.utensilios-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.utensilio-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fef3c7;
+    border-radius: 12px;
+    border: 1px solid #fde68a;
+    transition: all 0.3s ease;
+}
+
+.utensilio-item:hover {
+    background: #fef3c7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.utensilio-item i {
+    color: #d97706;
+    font-size: 1.1rem;
+}
+
+.utensilio-item span {
+    font-weight: 500;
+    color: #92400e;
+}
+
+/* Modo de Preparo */
+.preparo-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.preparo-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.step-content {
+    flex: 1;
+    padding: 15px 20px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.step-content p {
+    margin: 0;
+    color: #4a5568;
+    line-height: 1.6;
+    font-size: 1rem;
+}
+
+/* Montagem do Prato */
+.montagem-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.montagem-step {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.step-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.montagem-step .step-content {
+    flex: 1;
+    padding: 15px 20px;
+    background: #faf5ff;
+    border-radius: 12px;
+    border: 1px solid #e9d5ff;
+}
+
+.montagem-step .step-content p {
+    margin: 0;
+    color: #6b21a8;
+    line-height: 1.6;
+    font-size: 1rem;
+    font-weight: 500;
+}
+
+
+/* Ações */
+.ficha-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 40px;
+    flex-wrap: wrap;
+}
+
+.btn-voltar, .btn-categoria, .btn-cardapio {
+    padding: 12px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.btn-voltar {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid #e2e8f0;
+}
+
+.btn-voltar:hover {
+    background: #edf2f7;
+    color: #2d3748;
+}
+
+.btn-categoria {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.btn-categoria:hover {
+    background: #e0f2fe;
+    color: #0c4a6e;
+}
+
+.btn-cardapio {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-cardapio:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .ficha-header-content {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+    
+    .ficha-imagem-container {
+        width: 100%;
+        height: 250px;
+    }
+    
+    .ficha-titulo {
+        font-size: 2.2rem;
+    }
+    
+    .ficha-meta-info {
+        gap: 15px;
+    }
+    
+    .ficha-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .utensilios-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .preparo-step {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .step-number {
+        align-self: flex-start;
+    }
+    
+    .ficha-actions {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+</style>
+

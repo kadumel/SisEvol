@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cardápio - Evolução{% endblock %}
+
+{% block content %}
+<div class="cardapio-container">
+    <!-- Hero Section -->
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title">Nosso Cardápio</h1>
+            <p class="hero-subtitle">Descubra sabores únicos e pratos deliciosos preparados com ingredientes frescos</p>
+            
+            <!-- Barra de Busca -->
+            <div class="search-container">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" id="searchInput" placeholder="Buscar pratos, ingredientes..." class="search-input">
+                    <button class="search-btn" onclick="buscarPratos()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pratos em Destaque -->
+    {% if pratos_destaque %}
+    <section class="destaque-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-star-fill"></i>
+                Pratos em Destaque
+            </h2>
+            <p class="section-subtitle">Nossas especialidades mais pedidas</p>
+        </div>
+        
+        <div class="pratos-grid">
+            {% for prato in pratos_destaque %}
+            <div class="prato-card destaque" onclick="abrirPrato({{ prato.id }})">
+                {% if prato.imagem %}
+                <div class="prato-imagem">
+                    <img src="{{ prato.imagem }}" alt="{{ prato.nome }}">
+                    <div class="destaque-badge">
+                        <i class="bi bi-star-fill"></i>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="prato-info">
+                    <h3 class="prato-nome">{{ prato.nome }}</h3>
+                    <p class="prato-descricao">{{ prato.descricao|truncatewords:15 }}</p>
+                    <div class="prato-meta">
+                        <span class="prato-categoria">{{ prato.categoria.nome }}</span>
+                        <span class="prato-preco">R$ {{ prato.preco|floatformat:2 }}</span>
+                    </div>
+                    <div class="prato-tags">
+                        {% if prato.vegetariano %}<span class="tag vegetariano">Vegetariano</span>{% endif %}
+                        {% if prato.vegano %}<span class="tag vegano">Vegano</span>{% endif %}
+                        {% if prato.sem_gluten %}<span class="tag sem-gluten">Sem Glúten</span>{% endif %}
+                        {% if prato.sem_lactose %}<span class="tag sem-lactose">Sem Lactose</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Categorias -->
+    <section class="categorias-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                Categorias
+            </h2>
+            <p class="section-subtitle">Explore nossos pratos por categoria</p>
+        </div>
+        
+        <div class="categorias-grid">
+            {% for categoria in categorias %}
+            <div class="categoria-card" onclick="abrirCategoria({{ categoria.id }})" style="--categoria-cor: {{ categoria.cor }}">
+                <div class="categoria-icone">
+                    <i class="bi {{ categoria.icone|default:'bi-grid-3x3-gap' }}"></i>
+                </div>
+                <div class="categoria-info">
+                    <h3 class="categoria-nome">{{ categoria.nome }}</h3>
+                    {% if categoria.descricao %}
+                    <p class="categoria-descricao">{{ categoria.descricao }}</p>
+                    {% endif %}
+                    <div class="categoria-contador">
+                        <span>{{ categoria.pratos.count }} pratos</span>
+                    </div>
+                </div>
+                <div class="categoria-arrow">
+                    <i class="bi bi-chevron-right"></i>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<!-- Modal de Prato -->
+<div class="modal fade" id="pratoModal" tabindex="-1" aria-labelledby="pratoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="pratoModalLabel">Detalhes do Prato</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="pratoModalBody">
+                <!-- Conteúdo será carregado via AJAX -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos do Cardápio */
+.cardapio-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 80px 0;
+    text-align: center;
+    border-radius: 20px;
+    margin-bottom: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 40px;
+    opacity: 0.9;
+}
+
+/* Barra de Busca */
+.search-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 50px;
+    padding: 8px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.search-box i {
+    color: #667eea;
+    font-size: 1.25rem;
+    margin: 0 15px;
+}
+
+.search-input {
+    flex: 1;
+    border: none;
+    background: none;
+    outline: none;
+    font-size: 1.1rem;
+    padding: 15px 0;
+    color: #333;
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.search-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Seções */
+.section-header {
+    text-align: center;
+    margin-bottom: 50px;
+}
+
+.section-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.section-title i {
+    color: #667eea;
+}
+
+.section-subtitle {
+    font-size: 1.1rem;
+    color: #718096;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Grid de Pratos */
+.pratos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 30px;
+    margin-bottom: 60px;
+}
+
+.prato-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+}
+
+.prato-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.prato-card.destaque {
+    border: 2px solid #667eea;
+    position: relative;
+}
+
+.prato-imagem {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.prato-imagem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.prato-card:hover .prato-imagem img {
+    transform: scale(1.05);
+}
+
+.destaque-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 154, 86, 0.4);
+}
+
+.prato-info {
+    padding: 25px;
+}
+
+.prato-nome {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 10px;
+}
+
+.prato-descricao {
+    color: #718096;
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+.prato-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.prato-categoria {
+    background: #f7fafc;
+    color: #667eea;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.prato-preco {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.prato-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.tag.vegetariano {
+    background: #e6fffa;
+    color: #00a86b;
+}
+
+.tag.vegano {
+    background: #f0fff4;
+    color: #38a169;
+}
+
+.tag.sem-gluten {
+    background: #fff5f5;
+    color: #e53e3e;
+}
+
+.tag.sem-lactose {
+    background: #fef5e7;
+    color: #dd6b20;
+}
+
+/* Grid de Categorias */
+.categorias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 60px;
+}
+
+.categoria-card {
+    background: white;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.categoria-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--categoria-cor);
+}
+
+.categoria-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.categoria-icone {
+    width: 60px;
+    height: 60px;
+    background: var(--categoria-cor);
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.categoria-info {
+    flex: 1;
+}
+
+.categoria-nome {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 8px;
+}
+
+.categoria-descricao {
+    color: #718096;
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+}
+
+.categoria-contador {
+    color: #a0aec0;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.categoria-arrow {
+    color: #cbd5e0;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+}
+
+.categoria-card:hover .categoria-arrow {
+    color: var(--categoria-cor);
+    transform: translateX(5px);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+    
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .section-title {
+        font-size: 2rem;
+    }
+    
+    .pratos-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .categorias-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .categoria-card {
+        padding: 20px;
+    }
+    
+    .categoria-icone {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+}
+</style>
+
+<script>
+function abrirCategoria(categoriaId) {
+    window.location.href = `/cardapio/categoria/${categoriaId}/`;
+}
+
+function abrirPrato(pratoId) {
+    window.location.href = `/cardapio/prato/${pratoId}/`;
+}
+
+function buscarPratos() {
+    const query = document.getElementById('searchInput').value;
+    if (query.trim()) {
+        window.location.href = `/cardapio/buscar/?q=${encodeURIComponent(query)}`;
+    }
+}
+
+// Busca em tempo real
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        buscarPratos();
+    }
+});
+
+// Busca com debounce
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        const query = this.value;
+        if (query.length >= 2) {
+            // Implementar busca em tempo real aqui se necessário
+        }
+    }, 300);
+});
+</script>
+{% endblock %}

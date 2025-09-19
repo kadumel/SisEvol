@@ -1,0 +1,1046 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fichas Técnicas - Cardápio</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #ff9a56 0%, #ff6b35 100%);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-md);
+            padding: 20px 0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            height: 60px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Main Content */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Pesquisa */
+        .pesquisa-section {
+            margin-bottom: 50px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .pesquisa-title {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .pesquisa-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .pesquisa-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .pesquisa-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        .pesquisa-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .pesquisa-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .pesquisa-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .pesquisa-resultados {
+            display: none;
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .pesquisa-resultados.active {
+            display: block;
+        }
+        
+        .resultado-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .resultado-item:hover {
+            background: var(--bg-light);
+        }
+        
+        .resultado-item:last-child {
+            border-bottom: none;
+        }
+        
+        .resultado-nome {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+        
+        .resultado-descricao {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .resultado-item {
+            background: #f8fafc;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .resultado-item:hover {
+            background: #f1f5f9;
+            transform: translateX(5px);
+        }
+
+        .resultado-nome {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .resultado-categoria {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        /* Categorias */
+        .categorias-section {
+            margin-bottom: 50px;
+        }
+
+        .categorias-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 40px;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .categorias-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .categoria-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .categoria-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--categoria-cor);
+            transition: var(--transition);
+        }
+
+        .categoria-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .categoria-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .categoria-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--categoria-cor);
+            color: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .categoria-info h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .categoria-info p {
+            color: var(--text-secondary);
+            margin: 5px 0 0 0;
+            font-size: 0.9rem;
+        }
+
+        .categoria-count {
+            background: var(--categoria-cor);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+            display: inline-block;
+        }
+
+        /* Pratos */
+        .pratos-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .pratos-section.active {
+            display: block;
+        }
+
+        .pratos-header {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .back-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .pratos-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .pratos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .prato-card {
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .prato-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .prato-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .prato-content {
+            padding: 20px;
+        }
+
+        .prato-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+        }
+
+        .prato-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .prato-price {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .prato-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .prato-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .meta-item i {
+            color: var(--primary-gradient);
+        }
+
+        .ficha-btn {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .ficha-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        /* Estilos removidos - agora usa página separada */
+        .ficha-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .ficha-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .ficha-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 95vw;
+            width: 100%;
+            max-height: 95vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: var(--shadow-xl);
+        }
+
+        /* Estilos para o conteúdo da ficha técnica dentro do modal */
+        .ficha-content .ficha-tecnica-container {
+            padding: 30px;
+        }
+
+        .ficha-content .ficha-header {
+            margin-bottom: 30px;
+        }
+
+        .ficha-content .ficha-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .ficha-content .ficha-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .ficha-content .ficha-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .ficha-content .ficha-section {
+            background: var(--bg-light);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ficha-content .section-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .ficha-content .section-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .ficha-content .section-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .ficha-content .ingredientes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .ficha-content .ingrediente-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ficha-content .utensilios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .ficha-content .utensilio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ficha-content .preparo-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .ficha-content .step-number {
+            background: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .ficha-content .step-content {
+            flex: 1;
+        }
+
+        .ficha-content .step-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .ficha-content .step-description {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Estilos específicos para seções da ficha técnica */
+        .ficha-content .quantitativo-section {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        .ficha-content .quantitativo-content {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #fde68a;
+        }
+
+        .ficha-content .quantitativo-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            color: #92400e;
+        }
+
+        .ficha-content .montagem-section {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+        }
+
+        .ficha-content .montagem-content {
+            background: #ecfdf5;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #a7f3d0;
+        }
+
+        .ficha-content .montagem-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            color: #065f46;
+        }
+
+        .ficha-content .utensilios-section {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+        }
+
+        .ficha-content .utensilios-content {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #bae6fd;
+        }
+
+        .ficha-content .preparo-section {
+            background: #fdf2f8;
+            border: 1px solid #f9a8d4;
+        }
+
+        .ficha-content .preparo-content {
+            background: #fdf2f8;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #f9a8d4;
+        }
+
+        .ficha-content .dicas-section {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+        }
+
+        .ficha-content .dicas-content {
+            background: #f0fdf4;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #bbf7d0;
+        }
+
+        .ficha-content .conservacao-section {
+            background: #fefce8;
+            border: 1px solid #fde047;
+        }
+
+        .ficha-content .conservacao-content {
+            background: #fefce8;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #fde047;
+        }
+
+        .ficha-content .nutricional-section {
+            background: #f3e8ff;
+            border: 1px solid #c4b5fd;
+        }
+
+        .ficha-content .nutricional-content {
+            background: #f3e8ff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #c4b5fd;
+        }
+
+        .ficha-content .info-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ficha-content .info-content {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ficha-content .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .ficha-content .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ficha-content .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .ficha-content .info-value {
+            color: var(--text-secondary);
+        }
+
+        /* Responsividade para o modal */
+        @media (max-width: 768px) {
+            .ficha-content .ficha-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .ficha-content .ficha-title {
+                font-size: 2rem;
+            }
+            
+            .ficha-content .ingredientes-grid,
+            .ficha-content .utensilios-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ficha-content .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ficha-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            z-index: 10;
+        }
+
+        .ficha-close:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .categorias-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pratos-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pratos-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .ficha-modal.active {
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <img src="{% static 'image/LOGO---EVOL.png' %}" alt="Logo" class="logo">
+            <h1 class="header-title">Fichas Técnicas</h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Pesquisa -->
+        <div class="pesquisa-section" id="pesquisaSection">
+            <h2 class="pesquisa-title">Pesquisar Pratos</h2>
+            <div class="pesquisa-container">
+                <div class="pesquisa-input-group">
+                    <input type="text" id="pesquisaInput" class="pesquisa-input" placeholder="Digite o nome do prato...">
+                    <button class="pesquisa-btn" onclick="pesquisarPratos()">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div class="pesquisa-resultados" id="pesquisaResultados">
+                    <!-- Resultados da pesquisa aparecerão aqui -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorias -->
+        <div class="categorias-section" id="categoriasSection">
+            <h2 class="categorias-title">Escolha uma Categoria</h2>
+           
+            <div class="categorias-grid">
+                {% for categoria in categorias %}
+                <div class="categoria-card" onclick="mostrarPratos({{ categoria.id }}, '{{ categoria.nome }}', '{{ categoria.cor }}')">
+                    <div class="categoria-header">
+                        <div class="categoria-icon" style="--categoria-cor: {{ categoria.cor }}">
+                            <i class="bi {{ categoria.icone|default:'bi-grid-3x3-gap' }}"></i>
+                        </div>
+                        <div class="categoria-info">
+                            <h3>{{ categoria.nome }}</h3>
+                            <p>{{ categoria.descricao }}</p>
+                            <span class="categoria-count">{{ categoria.pratos.count }} pratos</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Pratos -->
+        <div class="pratos-section" id="pratosSection">
+            <div class="pratos-header">
+                <button class="back-btn" onclick="voltarCategorias()">
+                    <i class="bi bi-arrow-left"></i>
+                    Voltar
+                </button>
+                <h2 class="pratos-title" id="pratosTitle">Pratos</h2>
+            </div>
+            <div class="pratos-grid" id="pratosGrid">
+                <!-- Pratos serão carregados aqui via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Dados dos pratos
+        var pratosData = {
+            {% for categoria in categorias %}
+            {{ categoria.id }}: [
+                {% for prato in categoria.pratos.all %}
+                {
+                    id: {{ prato.id }},
+                    nome: "{{ prato.nome|escapejs }}",
+                    descricao: "{{ prato.descricao|escapejs }}",
+                    calorias: {{ prato.calorias }},
+                    tempo_preparo: {{ prato.tempo_preparo }},
+                    imagem: "{{ prato.imagem|escapejs }}",
+                    vegetariano: {{ prato.vegetariano|yesno:"true,false" }},
+                    vegano: {{ prato.vegano|yesno:"true,false" }},
+                    sem_gluten: {{ prato.sem_gluten|yesno:"true,false" }},
+                    sem_lactose: {{ prato.sem_lactose|yesno:"true,false" }}
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        };
+        
+        console.log('Dados carregados:', pratosData);
+
+        // Funções
+        function mostrarPratos(categoriaId, categoriaNome, categoriaCor) {
+            console.log('Função mostrarPratos chamada com:', categoriaId, categoriaNome);
+            console.log('Dados disponíveis:', pratosData);
+            
+            document.getElementById('categoriasSection').style.display = 'none';
+            document.getElementById('pratosSection').style.display = 'block';
+            document.getElementById('pratosTitle').textContent = categoriaNome;
+            
+            var pratosGrid = document.getElementById('pratosGrid');
+            pratosGrid.innerHTML = '';
+            
+            var pratos = pratosData[categoriaId] || [];
+            console.log('Pratos encontrados:', pratos);
+            
+            if (pratos.length === 0) {
+                pratosGrid.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 40px;">Nenhum prato encontrado nesta categoria.</p>';
+                return;
+            }
+            
+            for (var i = 0; i < pratos.length; i++) {
+                var prato = pratos[i];
+                var pratoCard = document.createElement('div');
+                pratoCard.className = 'prato-card';
+                pratoCard.innerHTML = 
+                    '<img src="' + prato.imagem + '" alt="' + prato.nome + '" class="prato-image" onerror="this.src=\'https://via.placeholder.com/400x200?text=Sem+Imagem\'">' +
+                    '<div class="prato-content">' +
+                        '<div class="prato-header">' +
+                            '<h3 class="prato-name">' + prato.nome + '</h3>' +
+                        '</div>' +
+                        '<p class="prato-description">' + prato.descricao + '</p>' +
+                        '<div class="prato-meta">' +
+                            '<div class="meta-item"><i class="bi bi-fire"></i><span>' + prato.calorias + ' cal</span></div>' +
+                            '<div class="meta-item"><i class="bi bi-clock"></i><span>' + prato.tempo_preparo + ' min</span></div>' +
+                            (prato.vegetariano ? '<div class="meta-item"><i class="bi bi-leaf"></i><span>Vegetariano</span></div>' : '') +
+                            (prato.vegano ? '<div class="meta-item"><i class="bi bi-tree"></i><span>Vegano</span></div>' : '') +
+                            (prato.sem_gluten ? '<div class="meta-item"><i class="bi bi-shield-check"></i><span>Sem Glúten</span></div>' : '') +
+                            (prato.sem_lactose ? '<div class="meta-item"><i class="bi bi-droplet"></i><span>Sem Lactose</span></div>' : '') +
+                        '</div>' +
+                        '<button class="ficha-btn" onclick="abrirFicha(' + prato.id + ')">' +
+                            '<i class="bi bi-clipboard-data"></i> Ver Ficha Técnica' +
+                        '</button>' +
+                    '</div>';
+                pratosGrid.appendChild(pratoCard);
+            }
+        }
+
+        function testeCategoria() {
+            console.log('Teste de categoria funcionando!');
+            mostrarPratos(1, 'Teste', '#ff6b6b');
+        }
+
+        function voltarCategorias() {
+            document.getElementById('pratosSection').style.display = 'none';
+            document.getElementById('categoriasSection').style.display = 'block';
+        }
+
+        function pesquisarPratos() {
+            var query = document.getElementById('pesquisaInput').value.trim();
+            if (query.length < 2) {
+                alert('Digite pelo menos 2 caracteres para pesquisar.');
+                return;
+            }
+            
+            var resultados = document.getElementById('pesquisaResultados');
+            resultados.innerHTML = '';
+            
+            var pratosEncontrados = [];
+            
+            // Buscar em todas as categorias
+            for (var categoriaId in pratosData) {
+                var pratos = pratosData[categoriaId];
+                for (var i = 0; i < pratos.length; i++) {
+                    var prato = pratos[i];
+                    if (prato.nome.toLowerCase().indexOf(query.toLowerCase()) !== -1) {
+                        pratosEncontrados.push(prato);
+                    }
+                }
+            }
+            
+            if (pratosEncontrados.length === 0) {
+                resultados.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">Nenhum prato encontrado.</p>';
+            } else {
+                for (var i = 0; i < pratosEncontrados.length; i++) {
+                    var prato = pratosEncontrados[i];
+                    var resultadoItem = document.createElement('div');
+                    resultadoItem.className = 'resultado-item';
+                    resultadoItem.innerHTML = 
+                        '<div class="resultado-nome">' + prato.nome + '</div>' +
+                        '<div class="resultado-descricao">' + prato.descricao + '</div>';
+                    resultadoItem.onclick = function(pratoId) {
+                        return function() {
+                            abrirFicha(pratoId);
+                        };
+                    }(prato.id);
+                    resultados.appendChild(resultadoItem);
+                }
+            }
+            
+            resultados.classList.add('active');
+        }
+
+        function abrirFicha(pratoId) {
+            console.log('Abrindo ficha do prato:', pratoId);
+            // Redirecionar para a página da ficha técnica
+            window.location.href = '/cardapio/ficha-tecnica-individual/' + pratoId + '/';
+        }
+
+
+        // Inicializar quando o DOM estiver carregado
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM carregado, funções definidas');
+            
+            // Pesquisar ao pressionar Enter
+            var pesquisaInput = document.getElementById('pesquisaInput');
+            if (pesquisaInput) {
+                pesquisaInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        pesquisarPratos();
+                    }
+                });
+                
+                // Limpar resultados ao limpar o campo de pesquisa
+                pesquisaInput.addEventListener('input', function(e) {
+                    if (e.target.value.trim() === '') {
+                        document.getElementById('pesquisaResultados').classList.remove('active');
+                    }
+                });
+            }
+            
+        });
+    </script>
+</body>
+</html>
