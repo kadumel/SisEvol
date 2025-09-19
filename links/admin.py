@@ -10,7 +10,7 @@ admin.site.register(Acesso)
 @admin.register(Link)
 class LinkAdmin(admin.ModelAdmin):
     list_display = ('id','empresa','desc','link')
-    list_filter = ('desc','link')
+    list_filter = ('empresa',)
     search_fields = ('desc',)
 
 from django.utils.translation import gettext_lazy as _

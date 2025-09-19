@@ -1,0 +1,583 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ prato.nome }} - Ficha Técnica</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --primary: #667eea;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --info: #3b82f6;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --bg-light: #f8fafc;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-light);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 20px 0;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .ficha-tecnica-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+        }
+
+        .ficha-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .ficha-title {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 15px;
+        }
+
+        .ficha-subtitle {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .ficha-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.7;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .ficha-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .ficha-section {
+            background: var(--bg-light);
+            border-radius: 15px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .section-content {
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Estilos específicos para seções */
+        .quantitativo-section {
+            background: #fef3c7;
+            border: 1px solid #fde68a;
+        }
+
+        .quantitativo-content {
+            background: #fef3c7;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #fde68a;
+        }
+
+        .quantitativo-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            color: #92400e;
+        }
+
+        .montagem-section {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+        }
+
+        .montagem-content {
+            background: #ecfdf5;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #a7f3d0;
+        }
+
+        .montagem-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            color: #065f46;
+        }
+
+        /* Ícone padrão da lista de montagem */
+        .montagem-item i {
+            font-size: 1.1rem;
+            color: #065f46;
+        }
+
+        .utensilios-section {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+        }
+
+        .utensilios-content {
+            background: #f0f9ff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #bae6fd;
+        }
+
+        .preparo-section {
+            background: #fdf2f8;
+            border: 1px solid #f9a8d4;
+        }
+
+        .preparo-content {
+            background: #fdf2f8;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #f9a8d4;
+        }
+
+
+        .info-section {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-content {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .ingredientes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .ingrediente-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .utensilios-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .utensilio-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .preparo-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .step-number {
+            background: var(--primary);
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .step-description {
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .info-value {
+            color: var(--text-secondary);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+                text-align: center;
+            }
+
+            .ficha-title {
+                font-size: 2.2rem;
+            }
+
+            .ficha-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .ingredientes-grid,
+            .utensilios-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .ficha-tecnica-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="bi bi-clipboard-data"></i>
+                </div>
+                <div class="logo-text">
+                    <h1>Ficha Técnica</h1>
+                  
+                </div>
+            </div>
+            <a href="/fichas-tecnicas/" class="back-btn">
+                <i class="bi bi-arrow-left"></i>
+                Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Conteúdo Principal -->
+    <div class="container">
+        <div class="ficha-tecnica-container">
+            <!-- Cabeçalho da Ficha -->
+            <div class="ficha-header">
+                <h1 class="ficha-title">{{ prato.nome }}</h1>
+                <p class="ficha-subtitle">{{ prato.categoria.nome }}</p>
+                {% if prato.descricao %}
+                <p class="ficha-description">{{ prato.descricao }}</p>
+                {% endif %}
+                {% if prato.imagem %}
+                <div style="margin-top: 25px; display: flex; justify-content: center;">
+                    <img src="{{ prato.imagem }}" alt="{{ prato.nome }}" style="max-width: 100%; height: auto; border-radius: 16px; box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);" onerror="this.src='https://via.placeholder.com/800x400?text=Sem+Imagem'">
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Grid de Seções -->
+            <div class="ficha-grid">
+                <!-- Quantitativo de Ingredientes -->
+                {% if prato.quantitativo_ingredientes_list %}
+                <div class="ficha-section quantitativo-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-calculator"></i>
+                            Quantitativo de Ingredientes
+                        </h2>
+                    </div>
+                    <div class="quantitativo-content">
+                        {% for item in prato.quantitativo_ingredientes_list %}
+                        <div class="quantitativo-item">
+                            <i class="bi bi-dot"></i>
+                            <span>{{ item }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Montagem do Prato -->
+                {% if prato.montagem_prato_list %}
+                <div class="ficha-section montagem-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-layers"></i>
+                            Montagem do Prato
+                        </h2>
+                    </div>
+                    <div class="montagem-content">
+                        {% for item in prato.montagem_prato_list %}
+                        <div class="montagem-item">
+                            <i class="bi bi-dot"></i>
+                            <span>{{ item }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Utensílios Necessários -->
+                {% if prato.utensilios_list %}
+                <div class="ficha-section utensilios-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-tools"></i>
+                            Utensílios Necessários
+                        </h2>
+                    </div>
+                    <div class="utensilios-content">
+                        <div class="utensilios-grid">
+                            {% for utensilio in prato.utensilios_list %}
+                            <div class="utensilio-item">
+                                <i class="bi bi-check-circle"></i>
+                                <span>{{ utensilio }}</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Modo de Preparo -->
+                {% if prato.modo_preparo_list %}
+                <div class="ficha-section preparo-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-list-ol"></i>
+                            Modo de Preparo
+                        </h2>
+                    </div>
+                    <div class="preparo-content">
+                        {% for step in prato.modo_preparo_list %}
+                        <div class="preparo-step">
+                            <div class="step-content">
+                                <div class="step-description">{{ step }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+
+                <!-- Informações Gerais -->
+                <div class="ficha-section info-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="bi bi-info-circle"></i>
+                            Informações Gerais
+                        </h2>
+                    </div>
+                    <div class="info-content">
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <i class="bi bi-fire"></i>
+                                <div>
+                                    <div class="info-label">Calorias</div>
+                                    <div class="info-value">{{ prato.calorias }} cal</div>
+                                </div>
+                            </div>
+                            <div class="info-item">
+                                <i class="bi bi-clock"></i>
+                                <div>
+                                    <div class="info-label">Tempo de Preparo</div>
+                                    <div class="info-value">{{ prato.tempo_preparo }} min</div>
+                                </div>
+                            </div>
+                            {% if prato.rendimento %}
+                            <div class="info-item">
+                                <i class="bi bi-people"></i>
+                                <div>
+                                    <div class="info-label">Rendimento</div>
+                                    <div class="info-value">{{ prato.rendimento }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if prato.dificuldade %}
+                            <div class="info-item">
+                                <i class="bi bi-star"></i>
+                                <div>
+                                    <div class="info-label">Dificuldade</div>
+                                    <div class="info-value">{{ prato.dificuldade_display }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if prato.temperatura_servico %}
+                            <div class="info-item">
+                                <i class="bi bi-thermometer-half"></i>
+                                <div>
+                                    <div class="info-label">Temperatura de Serviço</div>
+                                    <div class="info-value">{{ prato.temperatura_servico }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
