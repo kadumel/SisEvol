@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
 from django.db.models import Q
-from .models import Categoria, Prato, FichaTecnica, FichaTecnicaProduto
+from .models import Categoria, FichaTecnica, FichaTecnicaProduto
+
 def _icon_for_categoria(nome: str) -> str:
     n = (nome or "").lower()
     # Palavras‑chave → Bootstrap Icons
@@ -71,71 +72,26 @@ def _color_for_categoria(nome: str, default: str = "#667eea") -> str:
 
 
 def categoria_detail(request, categoria_id):
-    """Página de detalhes da categoria com os pratos"""
+    """Página de detalhes da categoria baseada em FichaTecnica"""
     categoria = get_object_or_404(Categoria, id=categoria_id, ativo=True)
-    pratos = Prato.objects.filter(categoria=categoria, ativo=True).order_by('nome')
-    
-    # Filtros
-    filtro_vegetariano = request.GET.get('vegetariano') == 'on'
-    filtro_vegano = request.GET.get('vegano') == 'on'
-    filtro_sem_gluten = request.GET.get('sem_gluten') == 'on'
-    filtro_sem_lactose = request.GET.get('sem_lactose') == 'on'
-    busca = request.GET.get('busca', '')
-    
-    if filtro_vegetariano:
-        pratos = pratos.filter(vegetariano=True)
-    if filtro_vegano:
-        pratos = pratos.filter(vegano=True)
-    if filtro_sem_gluten:
-        pratos = pratos.filter(sem_gluten=True)
-    if filtro_sem_lactose:
-        pratos = pratos.filter(sem_lactose=True)
-    if busca:
-        pratos = pratos.filter(
-            Q(nome__icontains=busca) | 
-            Q(descricao__icontains=busca) | 
-            Q(ingredientes__icontains=busca)
-        )
-    
-    context = {
-        'categoria': categoria,
-        'pratos': pratos,
-        'filtros': {
-            'vegetariano': filtro_vegetariano,
-            'vegano': filtro_vegano,
-            'sem_gluten': filtro_sem_gluten,
-            'sem_lactose': filtro_sem_lactose,
-            'busca': busca,
-        }
-    }
+    fichas = FichaTecnica.objects.filter(categoria=categoria).order_by('prato')
+
+    class FakePrato:
+        def __init__(self, f):
+            self.id = f.id
+            self.nome = f.prato
+            self.descricao = f.descricao or ""
+            self.imagem = f.imagem.url if f.imagem else ""
+
+    pratos = [FakePrato(f) for f in fichas]
+    context = {'categoria': categoria, 'pratos': pratos, 'filtros': {}}
     return render(request, 'cardapio/categoria.html', context)
 
 def prato_detail(request, prato_id):
-    """Página de detalhes do prato"""
-    prato = get_object_or_404(Prato, id=prato_id, ativo=True)
-    avaliacoes = Avaliacao.objects.filter(prato=prato, aprovado=True).order_by('-created_at')[:10]
-    
-    # Calcular média das avaliações
-    if avaliacoes.exists():
-        media_avaliacoes = sum(av.nota for av in avaliacoes) / avaliacoes.count()
-    else:
-        media_avaliacoes = 0
-    
-    context = {
-        'prato': prato,
-        'avaliacoes': avaliacoes,
-        'media_avaliacoes': media_avaliacoes,
-    }
-    return render(request, 'cardapio/prato.html', context)
+    return render(request, 'cardapio/404.html', {'message': 'Página indisponível'})
 
 def ficha_tecnica(request, prato_id):
-    """Página da ficha técnica do prato"""
-    prato = get_object_or_404(Prato, id=prato_id, ativo=True)
-    
-    context = {
-        'prato': prato,
-    }
-    return render(request, 'cardapio/ficha_tecnica.html', context)
+    return ficha_tecnica_publica(request, prato_id)
 
 def buscar_pratos(request):
     """API para busca de pratos via AJAX"""
@@ -196,8 +152,9 @@ def fichas_tecnicas_publicas(request):
             self.id = cat.id
             self.nome = cat.nome
             self.descricao = cat.descricao
-            self.icone = _icon_for_categoria(cat.nome) or cat.icone
-            self.cor = _color_for_categoria(cat.nome, cat.cor)
+            self.icone = cat.icone
+            self.cor = cat.cor
+            self.tempo_preparo = getattr(cat, 'tempo_preparo', 0)
             self.pratos = FakePratosManager(pratos_items)
 
     categorias_vm = []
@@ -214,8 +171,8 @@ def fichas_tecnicas_publicas(request):
                 self.id = -1
                 self.nome = 'Geral'
                 self.descricao = ''
-                self.icone = _icon_for_categoria(self.nome)
-                self.cor = _color_for_categoria(self.nome, '#667eea')
+                self.icone = 'bi-grid-3x3-gap'
+                self.cor = '#667eea'
         geral = CatGeral()
         fake_pratos_geral = [FakePrato(f) for f in fichas_sem_categoria]
         categorias_vm.append(CategoriaVM(geral, fake_pratos_geral))

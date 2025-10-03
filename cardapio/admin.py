@@ -1,14 +1,14 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Categoria, Prato, FichaTecnicaProduto, FichaTecnica, Produto
+from .models import Categoria,  FichaTecnicaProduto, FichaTecnica, Produto
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'cor_preview', 'ordem', 'ativo', 'created_at']
+    list_display = ['nome', 'icone', 'cor_preview', 'tempo_preparo', 'ordem', 'ativo', 'created_at']
     list_filter = ['ativo', 'created_at']
     search_fields = ['nome', 'descricao']
     ordering = ['ordem', 'nome']
-    list_editable = ['ordem', 'ativo']
+    list_editable = ['ordem', 'ativo', 'tempo_preparo']
     
     def cor_preview(self, obj):
         return format_html(

@@ -932,8 +932,7 @@
                     id: {{ prato.id }},
                     nome: "{{ prato.nome|escapejs }}",
                     descricao: "{{ prato.descricao|escapejs }}",
-                    calorias: {{ prato.calorias }},
-                    tempo_preparo: {{ prato.tempo_preparo }},
+                    tempo_preparo: {{ categoria.tempo_preparo|default:0 }},
                     imagem: "{{ prato.imagem|escapejs }}",
                     vegetariano: {{ prato.vegetariano|yesno:"true,false" }},
                     vegano: {{ prato.vegano|yesno:"true,false" }},
@@ -979,7 +978,6 @@
                         '</div>' +
                         '<p class="prato-description">' + prato.descricao + '</p>' +
                         '<div class="prato-meta">' +
-                            '<div class="meta-item"><i class="bi bi-fire"></i><span>' + prato.calorias + ' cal</span></div>' +
                             '<div class="meta-item"><i class="bi bi-clock"></i><span>' + prato.tempo_preparo + ' min</span></div>' +
                             (prato.vegetariano ? '<div class="meta-item"><i class="bi bi-leaf"></i><span>Vegetariano</span></div>' : '') +
                             (prato.vegano ? '<div class="meta-item"><i class="bi bi-tree"></i><span>Vegano</span></div>' : '') +
