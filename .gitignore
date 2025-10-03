@@ -28,7 +28,10 @@ share/python-wheels/
 .installed.cfg  
 *.egg  
 MANIFEST 
+
+/media/
   
+TESTE.PY 
 # PyInstaller  
 *.manifest  
 *.spec 
