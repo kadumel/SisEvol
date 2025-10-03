@@ -843,6 +843,43 @@
             </div>
         </div>
 
+        <!-- Cards Resumo -->
+        <div class="row" style="margin-bottom: 30px;">
+            <div class="col-md-4">
+                <div class="card" style="border-radius: 12px; box-shadow: var(--shadow-md);">
+                    <div class="card-body" style="display:flex; align-items:center; gap:12px;">
+                        <i class="bi bi-collection" style="font-size: 1.8rem; color:#667eea;"></i>
+                        <div>
+                            <div style="font-weight:700;">Total de Fichas</div>
+                            <div style="color:var(--text-secondary);">{{ total_fichas }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card" style="border-radius: 12px; box-shadow: var(--shadow-md);">
+                    <div class="card-body" style="display:flex; align-items:center; gap:12px;">
+                        <i class="bi bi-folder-x" style="font-size: 1.8rem; color:#ff9800;"></i>
+                        <div>
+                            <div style="font-weight:700;">Sem Categoria (Geral)</div>
+                            <div style="color:var(--text-secondary);">{{ total_sem_categoria }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card" style="border-radius: 12px; box-shadow: var(--shadow-md);">
+                    <div class="card-body" style="display:flex; align-items:center; gap:12px;">
+                        <i class="bi bi-image-alt" style="font-size: 1.8rem; color:#e91e63;"></i>
+                        <div>
+                            <div style="font-weight:700;">Sem Imagem</div>
+                            <div style="color:var(--text-secondary);">{{ total_sem_imagem }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Categorias -->
         <div class="categorias-section" id="categoriasSection">
             <h2 class="categorias-title">Escolha uma Categoria</h2>

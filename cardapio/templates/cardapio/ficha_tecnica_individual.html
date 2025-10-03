@@ -519,60 +519,7 @@
                 {% endif %}
 
 
-                <!-- Informações Gerais -->
-                <div class="ficha-section info-section">
-                    <div class="section-header">
-                        <h2 class="section-title">
-                            <i class="bi bi-info-circle"></i>
-                            Informações Gerais
-                        </h2>
-                    </div>
-                    <div class="info-content">
-                        <div class="info-grid">
-                            <div class="info-item">
-                                <i class="bi bi-fire"></i>
-                                <div>
-                                    <div class="info-label">Calorias</div>
-                                    <div class="info-value">{{ prato.calorias }} cal</div>
-                                </div>
-                            </div>
-                            <div class="info-item">
-                                <i class="bi bi-clock"></i>
-                                <div>
-                                    <div class="info-label">Tempo de Preparo</div>
-                                    <div class="info-value">{{ prato.tempo_preparo }} min</div>
-                                </div>
-                            </div>
-                            {% if prato.rendimento %}
-                            <div class="info-item">
-                                <i class="bi bi-people"></i>
-                                <div>
-                                    <div class="info-label">Rendimento</div>
-                                    <div class="info-value">{{ prato.rendimento }}</div>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if prato.dificuldade %}
-                            <div class="info-item">
-                                <i class="bi bi-star"></i>
-                                <div>
-                                    <div class="info-label">Dificuldade</div>
-                                    <div class="info-value">{{ prato.dificuldade_display }}</div>
-                                </div>
-                            </div>
-                            {% endif %}
-                            {% if prato.temperatura_servico %}
-                            <div class="info-item">
-                                <i class="bi bi-thermometer-half"></i>
-                                <div>
-                                    <div class="info-label">Temperatura de Serviço</div>
-                                    <div class="info-value">{{ prato.temperatura_servico }}</div>
-                                </div>
-                            </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </div>

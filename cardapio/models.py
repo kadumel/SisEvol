@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils.text import slugify
+from decimal import Decimal
 
 class Categoria(models.Model):
     nome = models.CharField(max_length=100, unique=True)
@@ -45,7 +46,7 @@ class Prato(models.Model):
     vegano = models.BooleanField(default=False)
     sem_gluten = models.BooleanField(default=False)
     sem_lactose = models.BooleanField(default=False)
-    imagem = models.CharField(max_length=500, blank=True, null=True, help_text='URL da imagem do prato')
+    imagem = models.ImageField(upload_to='pratos/', blank=True, null=True, help_text='Imagem do prato')
     destaque = models.BooleanField(default=False)
     ativo = models.BooleanField(default=True)
     
@@ -125,3 +126,44 @@ class Prato(models.Model):
             return [passo.strip() for passo in self.montagem_prato.split('\n') if passo.strip()]
         return []
 
+class FichaTecnica(models.Model):
+    prato = models.CharField(max_length=200, unique=True)
+    categoria = models.ForeignKey(Categoria, on_delete=models.CASCADE, related_name='ficha_tecnica', null=True, blank=True)
+    descricao = models.TextField(null=True, blank=True)
+    modo_preparo = models.TextField(null=True, blank=True)
+    imagem = models.ImageField(upload_to='fichas_tecnicas/', null=True, blank=True, help_text='Imagem da ficha técnica')
+    
+    class Meta:
+        verbose_name = 'Ficha Técnica'
+        verbose_name_plural = 'Fichas Técnicas'
+        db_table = 'cardapio_ficha_tecnica'
+
+    
+    
+class Produto(models.Model):
+    nome = models.CharField(max_length=200)
+    
+    class Meta:
+        verbose_name = 'Produto'
+        verbose_name_plural = 'Produtos'
+        db_table = 'cardapio_produto'
+
+    def __str__(self):
+        return self.nome
+    
+    
+class FichaTecnicaProduto(models.Model):
+    ficha_tecnica = models.ForeignKey(FichaTecnica, on_delete=models.CASCADE, related_name='ficha_tecnica_produto')
+    produto = models.ForeignKey(Produto, on_delete=models.CASCADE, related_name='ficha_tecnica_produto')
+    med_caseira = models.CharField(max_length=200, null=True, blank=True)
+    quantidade = models.CharField(max_length=20, null=True, blank=True)
+    unidade = models.CharField(max_length=20, null=True, blank=True)
+    
+    class Meta:
+        verbose_name = 'Ficha Técnica Produto'
+        verbose_name_plural = 'Fichas Técnicas Produtos'
+        db_table = 'cardapio_ficha_produto'
+
+    def __str__(self):
+        return self.produto.nome
+    

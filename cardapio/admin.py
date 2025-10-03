@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from .models import Categoria, Prato
+from .models import Categoria, Prato, FichaTecnicaProduto, FichaTecnica, Produto
 
 @admin.register(Categoria)
 class CategoriaAdmin(admin.ModelAdmin):
@@ -17,32 +17,45 @@ class CategoriaAdmin(admin.ModelAdmin):
         )
     cor_preview.short_description = 'Cor'
 
-@admin.register(Prato)
-class PratoAdmin(admin.ModelAdmin):
-    list_display = ['nome', 'categoria', 'preco', 'tamanho', 'destaque', 'ativo', 'created_at']
-    list_filter = ['categoria', 'tamanho', 'vegetariano', 'vegano', 'sem_gluten', 'sem_lactose', 'destaque', 'ativo', 'created_at']
-    search_fields = ['nome', 'descricao', 'ingredientes']
-    ordering = ['categoria__ordem', 'categoria__nome', 'nome']
-    list_editable = ['destaque', 'ativo']
-    filter_horizontal = []
-    
-    fieldsets = (
-        ('Informações Básicas', {
-            'fields': ('categoria', 'nome', 'descricao', 'ingredientes', 'preco', 'tamanho')
-        }),
-        ('Características', {
-            'fields': ('calorias', 'tempo_preparo', 'nivel_picante')
-        }),
-        ('Ficha Técnica', {
-            'fields': ('rendimento', 'tempo_preparo_total', 'dificuldade', 'temperatura_servico', 'utensilios_necessarios', 'quantitativo_ingredientes', 'modo_preparo', 'montagem_prato', 'dicas_chef', 'conservacao', 'valor_nutricional'),
-            'classes': ('collapse',)
-        }),
-        ('Restrições Alimentares', {
-            'fields': ('vegetariano', 'vegano', 'sem_gluten', 'sem_lactose'),
-            'classes': ('collapse',)
-        }),
-        ('Mídia e Status', {
-            'fields': ('imagem', 'destaque', 'ativo')
-        }),
-    )
 
+@admin.register(FichaTecnicaProduto)
+class FichaTecnicaProdutoAdmin(admin.ModelAdmin):
+    list_display = ['ficha_tecnica_prato', 'ficha_tecnica_categoria', 'produto', 'med_caseira', 'quantidade', 'unidade']
+    list_filter = ['ficha_tecnica__categoria']
+    search_fields = ['ficha_tecnica__prato', 'produto__nome']
+    ordering = ['ficha_tecnica__prato', 'produto']
+
+    def ficha_tecnica_prato(self, obj):
+        return obj.ficha_tecnica.prato if obj.ficha_tecnica else ''
+    ficha_tecnica_prato.short_description = 'Ficha Técnica'
+
+    def ficha_tecnica_categoria(self, obj):
+        return obj.ficha_tecnica.categoria if obj.ficha_tecnica and obj.ficha_tecnica.categoria else ''
+    ficha_tecnica_categoria.short_description = 'Categoria'
+    
+    
+@admin.register(FichaTecnica)
+class FichaTecnicaAdmin(admin.ModelAdmin):
+    list_display = ['prato', 'categoria', 'descricao', 'imagem_preview', 'modo_preparo']
+    list_filter = ['categoria']
+    search_fields = ['prato', 'categoria__nome']
+    ordering = ['categoria', 'prato']
+    readonly_fields = ['imagem_preview']
+    list_editable = ['categoria']
+    fields = ['prato', 'categoria', 'descricao', 'modo_preparo', 'imagem', 'imagem_preview']
+
+    def imagem_preview(self, obj):
+        if obj.imagem:
+            return format_html('<img src="{}" style="max-height: 120px;" />', obj.imagem.url)
+        return "—"
+    imagem_preview.short_description = 'Preview'
+
+
+@admin.register(Produto)
+class ProdutoAdmin(admin.ModelAdmin):
+    list_display = ['nome']
+    list_filter = ['nome']
+    search_fields = ['nome']
+    ordering = ['nome']
+    
+    
