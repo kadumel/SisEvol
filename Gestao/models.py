@@ -173,3 +173,19 @@ class Fornecedor(models.Model):
         return self.codigo +' - '+ self.nome
     
     
+class reponsavel_conta(models.Model):
+    empresa = models.ForeignKey(Empresa, on_delete=models.PROTECT)
+    conta = models.ForeignKey(Conta, on_delete=models.PROTECT)
+    responsavel = models.ForeignKey(User, on_delete=models.PROTECT)
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+    
+    def __str__(self):
+        return self.conta.nome +' - '+ self.responsavel.username
+    
+    
+
+    
+    
+    
+    

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor
+from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta
 from django.contrib.admin.filters import SimpleListFilter
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -418,3 +418,16 @@ class ConfigGeralAdmin(admin.ModelAdmin):
 class FornecedorAdmin(admin.ModelAdmin):
     list_display = ['codigo','nome']
     
+    
+@admin.register(reponsavel_conta)
+class reponsavel_contaAdmin(admin.ModelAdmin):
+    list_display = ['empresa','conta','responsavel']
+    list_filter = ['empresa','conta','responsavel']
+    search_fields = ['empresa__empresa','conta__nome','responsavel__username']
+    list_per_page = 500
+    ordering = ['empresa','conta','responsavel']
+    readonly_fields = ['created', 'updated']
+    list_editable = ['responsavel']
+    list_display_links = ['empresa','conta']
+    list_select_related = ['empresa','conta','responsavel']
+    list_filter = ['empresa','conta','responsavel']
