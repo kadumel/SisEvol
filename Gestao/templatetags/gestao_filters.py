@@ -60,4 +60,11 @@ def format_percent(value):
         valor_float = float(value)
         return f"{valor_float:.2f}%".replace(".", ",")
     except (ValueError, TypeError):
-        return "0,00%" 
+        return "0,00%"
+
+@register.filter
+def is_encerrado(data, datas_encerradas):
+    """Verifica se uma data está no conjunto de datas encerradas"""
+    if not datas_encerradas:
+        return False
+    return data in datas_encerradas 

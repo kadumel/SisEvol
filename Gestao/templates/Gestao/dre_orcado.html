@@ -361,44 +361,58 @@
                      </div>
                    </td>
                   {% for data in datas_unicas %}
+                  {% with data_encerrada=data|is_encerrado:datas_encerradas %}
                   <td class="text-end">
                     {% with valor=centro_resultado_data.valores_por_data|get_item:data %}
                     {% with orcamento_id=centro_resultado_data.orcamento_ids|get_item:data %}
                     {% if valor %}
                       {% if valor < 0 %}
                         <input type="text" 
-                               class="form-control form-control-sm text-end text-danger fw-bold input-valor" 
+                               class="form-control form-control-sm text-end text-danger fw-bold input-valor {% if data_encerrada %}disabled-input{% endif %}" 
                                value="{{ valor|format_currency }}" 
                                data-orcamento-id="{{ orcamento_id }}"
                                data-data="{{ data|date:'Y-m-d' }}"
                                data-valor-original="{{ valor|format_currency }}"
-                               onchange="marcarAlteracao(this)">
+                               {% if data_encerrada %}disabled title="Orçamento encerrado para este mês/ano"{% else %}onchange="marcarAlteracao(this)"{% endif %}>
                       {% else %}
                         <input type="text" 
-                               class="form-control form-control-sm text-end text-primary fw-bold input-valor" 
+                               class="form-control form-control-sm text-end text-primary fw-bold input-valor {% if data_encerrada %}disabled-input{% endif %}" 
                                value="{{ valor|format_currency }}" 
                                data-orcamento-id="{{ orcamento_id }}"
                                data-data="{{ data|date:'Y-m-d' }}"
                                data-valor-original="{{ valor|format_currency }}"
-                               onchange="marcarAlteracao(this)">
+                               {% if data_encerrada %}disabled title="Orçamento encerrado para este mês/ano"{% else %}onchange="marcarAlteracao(this)"{% endif %}>
                       {% endif %}
                     {% else %}
                       <input type="text" 
-                             class="form-control form-control-sm text-end text-muted input-valor" 
+                             class="form-control form-control-sm text-end text-muted input-valor {% if data_encerrada %}disabled-input{% endif %}" 
                              value="0,00" 
                              data-orcamento-id="{{ orcamento_id }}"
                              data-data="{{ data|date:'Y-m-d' }}"
                              data-valor-original="0,00"
-                             onchange="marcarAlteracao(this)">
+                             {% if data_encerrada %}disabled title="Orçamento encerrado para este mês/ano"{% else %}onchange="marcarAlteracao(this)"{% endif %}>
                     {% endif %}
                     {% endwith %}
                     {% endwith %}
                   </td>
                   <td class="text-end">
                     {% with av_valor=centro_resultado_data.av_por_data|get_item:data %}
-                    <small class="text-dark">{{ av_valor|format_percent }}</small>
+                    {% with receita_data=receita_por_data|get_item:data %}
+                    <input type="number" 
+                           step="0.01"
+                           class="form-control form-control-sm text-end text-dark input-percentual {% if data_encerrada %}disabled-input{% endif %}" 
+                           value="{{ av_valor|default:0|floatformat:2 }}" 
+                           data-data="{{ data|date:'Y-m-d' }}"
+                           data-receita="{{ receita_data|default:0 }}"
+                           data-orcamento-id="{{ orcamento_id }}"
+                           data-natureza="{% if centro_resultado_data.natureza %}{{ centro_resultado_data.natureza }}{% else %}Entrada{% endif %}"
+                           placeholder="0.00"
+                           {% if data_encerrada %}disabled title="Orçamento encerrado para este mês/ano"{% else %}onchange="calcularValorPorPercentual(this)"{% endif %}
+                           style="min-width: 80px;">
+                    {% endwith %}
                     {% endwith %}
                   </td>
+                  {% endwith %}
                   {% endfor %}
                   <td class="text-end">
                     {% if centro_resultado_data.valor < 0 %}
@@ -766,6 +780,18 @@
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
+  
+  /* Estilo para inputs desabilitados (encerrados) */
+  .disabled-input {
+    background-color: #e9ecef !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    border-color: #ced4da !important;
+  }
+  
+  .disabled-input:hover {
+    background-color: #e9ecef !important;
+  }
 </style>
 
 <script>
@@ -775,12 +801,82 @@ function toggleNivel(nivelId) {
   
   elementos.forEach(elemento => {
     if (elemento.style.display === 'none') {
+      // Expandir: mostrar elementos deste nível
       elemento.style.display = 'table-row';
-      icon.className = 'bi bi-chevron-up';
+      if (icon) {
+        icon.className = 'bi bi-chevron-up';
+      }
     } else {
+      // Colapsar: ocultar elementos deste nível e todos os níveis abaixo
       elemento.style.display = 'none';
-      icon.className = 'bi bi-chevron-down';
+      if (icon) {
+        icon.className = 'bi bi-chevron-down';
+      }
+      
+      // Fechar todos os níveis abaixo recursivamente
+      fecharNiveisAbaixo(nivelId);
     }
+  });
+}
+
+// Função para fechar recursivamente todos os níveis abaixo de um nível
+function fecharNiveisAbaixo(nivelId) {
+  // Buscar todos os botões de toggle que podem ser filhos deste nível
+  const todosBotoes = document.querySelectorAll('[onclick^="toggleNivel"]');
+  
+  todosBotoes.forEach(botao => {
+    const onclickAttr = botao.getAttribute('onclick');
+    if (onclickAttr) {
+      const match = onclickAttr.match(/toggleNivel\('([^']+)'\)/);
+      if (match && match[1]) {
+        const nivelIdFilho = match[1];
+        
+        // Verificar se é um filho deste nível
+        let ehFilho = false;
+        
+        if (nivelId.startsWith('dre-')) {
+          // Se o pai é DRE, filhos são nivel1 que contêm o ID da DRE
+          if (nivelIdFilho.startsWith('nivel1-') && nivelIdFilho.includes(nivelId.replace('dre-', ''))) {
+            ehFilho = true;
+          }
+        } else if (nivelId.startsWith('nivel1-')) {
+          // Se o pai é nivel1, filhos são nivel2 que contêm os mesmos IDs
+          if (nivelIdFilho.startsWith('nivel2-') && nivelIdFilho.includes(nivelId.split('-')[1]) && nivelIdFilho.includes(nivelId.split('-')[2])) {
+            ehFilho = true;
+          }
+        } else if (nivelId.startsWith('nivel2-')) {
+          // Se o pai é nivel2, filhos são nivel3 que contêm os mesmos IDs
+          if (nivelIdFilho.startsWith('nivel3-') && nivelIdFilho.includes(nivelId.split('-')[1]) && nivelIdFilho.includes(nivelId.split('-')[2]) && nivelIdFilho.includes(nivelId.split('-')[3])) {
+            ehFilho = true;
+          }
+        }
+        
+        if (ehFilho) {
+          // Fechar os elementos deste nível filho
+          const elementosFilho = document.querySelectorAll('.nivel-' + nivelIdFilho);
+          elementosFilho.forEach(elemento => {
+            elemento.style.display = 'none';
+          });
+          
+          // Fechar o ícone
+          const iconFilho = botao.querySelector('i');
+          if (iconFilho) {
+            iconFilho.className = 'bi bi-chevron-down';
+          }
+          
+          // Fechar recursivamente os filhos deste filho
+          fecharNiveisAbaixo(nivelIdFilho);
+        }
+      }
+    }
+  });
+  
+  // Também fechar elementos de centros de resultado (nível 4) que não têm botão
+  // Eles têm classes como nivel-nivel3-X-Y-Z
+  const prefixoClasse = 'nivel-' + nivelId + '-';
+  const elementosCentrosResultado = document.querySelectorAll('tr[class*="' + prefixoClasse + '"]');
+  elementosCentrosResultado.forEach(elemento => {
+    elemento.style.display = 'none';
   });
 }
 
@@ -824,6 +920,11 @@ function recolherTodos() {
 }
  
  function marcarAlteracao(input) {
+        // Verificar se o input está desabilitado (encerrado)
+        if (input.disabled) {
+            return; // Não permitir alterações em campos encerrados
+        }
+        
         // Remover a classe 'is-loading' para permitir salvar
         input.classList.remove('is-loading');
         
@@ -843,8 +944,8 @@ function recolherTodos() {
         } else {
             // Remover a classe 'is-modified' se o valor não foi alterado
             input.classList.remove('is-modified');
-            // Verificar se ainda há outros inputs modificados
-            const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+            // Verificar se ainda há outros inputs modificados (não desabilitados)
+            const inputsModificados = document.querySelectorAll('.input-valor.is-modified:not(:disabled)');
             if (inputsModificados.length === 0) {
                 // Ocultar o botão de salvar se não houver alterações
                 document.getElementById('btnSalvar').style.display = 'none';
@@ -854,8 +955,81 @@ function recolherTodos() {
         }
     }
     
+    // Função para calcular o valor quando o percentual mudar
+    function calcularValorPorPercentual(inputPercentual) {
+        // Obter o percentual digitado
+        const percentual = parseFloat(inputPercentual.value) || 0;
+        
+        // Obter a receita da data
+        const receita = parseFloat(inputPercentual.getAttribute('data-receita')) || 0;
+        
+        // Obter a natureza da conta
+        const natureza = inputPercentual.getAttribute('data-natureza') || 'Entrada';
+        
+        // Calcular o valor absoluto: valor = (percentual / 100) * receita
+        const valorAbsoluto = Math.abs((percentual / 100) * receita);
+        
+        // Aplicar sinal baseado na natureza da conta
+        // Se natureza for 'Saida', o valor deve ser negativo
+        // Se natureza for 'Entrada', o valor deve ser positivo
+        let novoValor;
+        if (natureza === 'Saida') {
+            novoValor = valorAbsoluto * -1;  // Sempre negativo para Saida
+        } else {
+            novoValor = valorAbsoluto;  // Sempre positivo para Entrada
+        }
+        
+        // Encontrar o input de valor na mesma linha que corresponde à mesma data
+        const linha = inputPercentual.closest('tr');
+        const data = inputPercentual.getAttribute('data-data');
+        let inputValor = null;
+        
+        // Procurar o input de valor na mesma linha que corresponde à mesma data
+        linha.querySelectorAll('.input-valor').forEach(input => {
+            if (input.getAttribute('data-data') === data) {
+                inputValor = input;
+            }
+        });
+        
+        if (inputValor) {
+            // Formatar o valor como moeda brasileira (formato: 1.234,56)
+            const valorFormatado = novoValor.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            
+            // Atualizar o valor no input
+            inputValor.value = valorFormatado;
+            
+            // Marcar como modificado
+            inputValor.classList.add('is-modified');
+            
+            // Atualizar o atributo data-valor-original para refletir o novo valor calculado
+            inputValor.setAttribute('data-valor-original', valorFormatado);
+            
+            // Mostrar o botão de salvar
+            const btnSalvar = document.getElementById('btnSalvar');
+            if (btnSalvar) {
+                btnSalvar.style.display = 'block';
+                atualizarContadorAlteracoes();
+            }
+            
+            // Aplicar cor baseada no valor (considerando a natureza)
+            if (novoValor < 0) {
+                inputValor.classList.remove('text-primary', 'text-muted');
+                inputValor.classList.add('text-danger');
+            } else if (novoValor > 0) {
+                inputValor.classList.remove('text-danger', 'text-muted');
+                inputValor.classList.add('text-primary');
+            } else {
+                inputValor.classList.remove('text-danger', 'text-primary');
+                inputValor.classList.add('text-muted');
+            }
+        }
+    }
+    
     function atualizarContadorAlteracoes() {
-        const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+        const inputsModificados = document.querySelectorAll('.input-valor.is-modified:not(:disabled)');
         const btnSalvar = document.getElementById('btnSalvar');
         
         if (inputsModificados.length > 0) {
@@ -866,10 +1040,15 @@ function recolherTodos() {
     }
 
 function salvarAlteracoes() {
-  const inputsModificados = document.querySelectorAll('.input-valor.is-modified');
+  const inputsModificados = document.querySelectorAll('.input-valor.is-modified:not(:disabled)');
   const valoresParaSalvar = [];
 
   inputsModificados.forEach(input => {
+    // Verificar se o input não está desabilitado (encerrado)
+    if (input.disabled) {
+      return; // Pular inputs desabilitados
+    }
+    
     const orcamentoId = input.getAttribute('data-orcamento-id');
     const data = input.getAttribute('data-data');
     const valor = input.value;
@@ -880,7 +1059,7 @@ function salvarAlteracoes() {
     valoresParaSalvar.push({
       orcamento_id: orcamentoId,
       valor: parseFloat(valorParaSalvar),
-      data: data
+      data: data // Incluir data no payload
     });
   });
 
@@ -918,11 +1097,11 @@ function salvarAlteracoes() {
     btnSalvar.innerHTML = textoOriginal;
     
     if (data.success) {
-      mostrarNotificacao('Alterações salvas com sucesso!', 'success');
+      mostrarNotificacao('Alterações salvas com sucesso! (Deduções e Despesas Variáveis foram recalculadas com base no AV% dos últimos 4 meses do realizado)', 'success');
       // Recarregar a página após um breve delay
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 1500);
     } else {
       mostrarNotificacao('Erro ao salvar alterações: ' + data.error, 'error');
     }

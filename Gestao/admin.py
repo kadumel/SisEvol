@@ -1,11 +1,27 @@
 from django.contrib import admin
-from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta
+from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta, EncerramentoOrcamento
 from django.contrib.admin.filters import SimpleListFilter
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from .admin_mixins import DateHierarchyCurrentMonthMixin
 from django import forms
 # Register your models here.
+
+@admin.register(EncerramentoOrcamento)
+class EncerramentoOrcamentoAdmin(admin.ModelAdmin):
+    list_display = ['data', 'usuario']  # Mostrar usuário na listagem
+    list_filter = ['usuario', 'data']
+    search_fields = ['usuario__username']
+    exclude = ['usuario']  # Ocultar campo usuário do formulário
+    readonly_fields = ['created', 'updated']
+    list_per_page = 500
+    ordering = ['data']
+    
+    def save_model(self, request, obj, form, change):
+        """Define automaticamente o usuário logado como responsável pelo encerramento"""
+        # Sempre define o usuário logado como responsável
+        obj.usuario = request.user
+        super().save_model(request, obj, form, change)
 
 
 def limparConfDre(modeladmin, request, queryset):
