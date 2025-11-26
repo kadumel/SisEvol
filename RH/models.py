@@ -49,8 +49,6 @@ FREQUENCIA_CHOICES = (
     ("S", "SAÍDA_ANTECIPADA"),
 )
 
-
-
 class Empresa(models.Model):
     codigo_BI = models.IntegerField()
     empresa = models.CharField(max_length=100, blank=False, null=False)
@@ -60,7 +58,6 @@ class Empresa(models.Model):
     def __str__(self):
         return f"{self.empresa}"
     
-
 class Lotacao(models.Model):
     lotacao = models.CharField(max_length=100, blank=False, null=False)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -77,7 +74,6 @@ class Cargo(models.Model):
     def __str__(self):
         return f"{self.cargo}"
     
-    
 class Folga(models.Model):
     folga = models.CharField(max_length=100, blank=False, null=False)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -86,8 +82,6 @@ class Folga(models.Model):
     def __str__(self):
         return f"{self.folga}"    
     
-    
-
 class TipoContrato(models.Model):
     tipo_contrato = models.CharField(max_length=100, blank=False, null=False)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -114,8 +108,6 @@ class Turno(models.Model):
     def __str__(self):
         return f"{self.turno} - {self.intervalo}"
 
-    
-    
 class Funcionario(models.Model):
     empresa = models.ForeignKey('Empresa', Empresa)
     matricula = models.CharField('Matrícula',max_length=6, null=True, blank=True)
@@ -162,7 +154,6 @@ class Funcionario(models.Model):
     def __str__(self):
         return f"{self.matricula} - {self.nome}"
     
-
 class Vaga(models.Model):
     pass
 
@@ -176,7 +167,6 @@ class ConfigGeral(models.Model):
     def __str__(self):
         return f"{self.empresa.empresa} - {self.dias_primeiro_termino_exp} - {self.dias_segundo_termino_exp}"
     
-
 class Gestor(models.Model):
     cargo = models.ForeignKey(Cargo, on_delete=models.CASCADE)
     funcionario = models.ForeignKey('Funcionario',Funcionario)
@@ -186,7 +176,6 @@ class Gestor(models.Model):
     
     def __str__(self):
         return f"{self.cargo.cargo} - {self.funcionario.nome}"
-
 
 class TipoEvento(models.Model):
     tipo_evento = models.CharField('Tipo Evento', max_length=40)
@@ -209,9 +198,7 @@ class Evento(models.Model):
     def __str__(self):
         return f"{self.tipo.tipo_evento} - {self.descricao}"
 
-
 class DiaEvento(models.Model):
-    """Modelo para controlar os dias específicos de um evento"""
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE, related_name='dias_evento')
     data = models.DateField('Data do Dia', null=False, blank=False)
     hora_inicio = models.TimeField('Hora de Início', null=True, blank=True)
@@ -228,7 +215,6 @@ class DiaEvento(models.Model):
     def __str__(self):
         return f"{self.evento.descricao} - {self.data} "
     
-
 class ControleEvento(models.Model):
     funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
@@ -239,9 +225,7 @@ class ControleEvento(models.Model):
     def __str__(self):
         return f"{self.funcionario.nome} - {self.evento.descricao}"
 
-
 class FrequenciaEvento(models.Model):
-    """Modelo para controlar a frequência dos funcionários nos dias dos eventos"""
     controle_evento = models.ForeignKey(ControleEvento, on_delete=models.CASCADE, related_name='frequencias')
     dia_evento = models.ForeignKey(DiaEvento, on_delete=models.CASCADE, related_name='frequencias')
     status = models.CharField('Status', max_length=1, choices=FREQUENCIA_CHOICES, default='P')
@@ -259,10 +243,6 @@ class FrequenciaEvento(models.Model):
     def __str__(self):
         return f"{self.controle_evento.funcionario.nome} - {self.dia_evento}"
     
-
-
-    
-    
 class Auditoria(models.Model):
     origem = models.CharField(max_length=50)  # Controle de Visitante
     usuario = models.ForeignKey(User, on_delete=models.PROTECT, null=False, blank=False) # Daniel
@@ -272,8 +252,6 @@ class Auditoria(models.Model):
 
     def __str__(self):
         return f"{self.origem} - {self.usuario} - {self.observacao}"
-
-    
 
 class Absenteismo(models.Model):
     funcionario = models.ForeignKey(Funcionario, on_delete=models.CASCADE)
@@ -298,4 +276,4 @@ class Absenteismo(models.Model):
         return f"{self.funcionario.nome} - {self.data}"
     
     
-    
+

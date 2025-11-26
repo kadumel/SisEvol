@@ -550,6 +550,28 @@
                 </div>
               </div>
               
+              <!-- Submenu MANAD -->
+              <div class="submenu-group">
+                <div class="submenu-header">
+                  <i class="bi bi-file-earmark-text"></i>
+                  <span>MANAD</span>
+                </div>
+                <div class="submenu-items">
+                  <a href="{% url 'indexManad' %}" class="submenu-link {% if request.resolver_match.url_name == 'indexManad' %}active{% endif %}">
+                    <i class="bi bi-house-door"></i>
+                    <span>Dashboard MANAD</span>
+                  </a>
+                  <a href="{% url 'listImportacoesManad' %}" class="submenu-link {% if request.resolver_match.url_name == 'listImportacoesManad' %}active{% endif %}">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Importações</span>
+                  </a>
+                  <a href="{% url 'importarManad' %}" class="submenu-link {% if request.resolver_match.url_name == 'importarManad' %}active{% endif %}">
+                    <i class="bi bi-upload"></i>
+                    <span>Importar Arquivo</span>
+                  </a>
+                </div>
+              </div>
+              
               <!-- Outros itens do menu RH -->
               <a href="{% url 'gestaoEventos' %}" class="submenu-link {% if request.resolver_match.url_name == 'gestaoEventos' %}active{% endif %}">
                 <i class="bi bi-calendar-event"></i>
