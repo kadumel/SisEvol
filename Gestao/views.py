@@ -9,7 +9,7 @@ from django.db.models import Q, Sum
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 import json
-from .models import Orcamento, Conta, CentroCusto, Dre
+from .models import Orcamento, Conta, CentroCusto, Dre, EncerramentoOrcamento
 from RH.models import Empresa
 from django.db import connection
 from PerfilMenus.views import AcessoAcoes
@@ -39,9 +39,13 @@ def update_orcamento_valor(request):
             sucessos = 0
             erros = []
             
+            # Identificar se algum valor editado pertence ao grupo RECEITAS BRUTAS (ID 2)
+            valores_receitas_brutas = []
+            
             for item in valores:
                 orcamento_id = item.get('orcamento_id')
                 valor = item.get('valor')
+                data_valor = item.get('data')
                 
                 if not orcamento_id or orcamento_id == 'None':
                     erros.append(f"ID de orçamento inválido: {orcamento_id}")
@@ -49,6 +53,36 @@ def update_orcamento_valor(request):
                 
                 try:
                     orcamento = Orcamento.objects.get(id=orcamento_id)
+                    
+                    # Verificar se existe encerramento para a data do orçamento
+                    
+                    # Converter data_valor para objeto date se necessário
+                    if data_valor:
+                        if isinstance(data_valor, str):
+                            data_orcamento = datetime.strptime(data_valor, '%Y-%m-%d').date()
+                        else:
+                            data_orcamento = data_valor
+                    else:
+                        data_orcamento = orcamento.data
+                    
+                    # Verificar se existe encerramento para o mês/ano desta data
+                    # O encerramento é por mês/ano, então comparamos mês e ano
+                    encerramento = EncerramentoOrcamento.objects.filter(
+                        data__year=data_orcamento.year,
+                        data__month=data_orcamento.month
+                    ).first()
+                    if encerramento:
+                        erros.append(f"Orçamento encerrado para {data_orcamento.strftime('%m/%Y')}. Não é possível alterar valores.")
+                        continue
+                    
+                    # Verificar se a conta pertence ao grupo RECEITAS BRUTAS (DRE ID = 2)
+                    if orcamento.conta.dre_id == 2:
+                        valores_receitas_brutas.append({
+                            'orcamento': orcamento,
+                            'novo_valor': valor,
+                            'data': data_valor or str(orcamento.data)
+                        })
+                    
                     orcamento.valor = valor
                     orcamento.save()
                     sucessos += 1
@@ -57,15 +91,31 @@ def update_orcamento_valor(request):
                 except Exception as e:
                     erros.append(f"Erro ao salvar orçamento {orcamento_id}: {str(e)}")
             
-            if erros:
+            # Se foram editados valores de RECEITAS BRUTAS, recalcular Deduções e Despesas Variáveis
+            if valores_receitas_brutas:
+                try:
+                    recalcular_por_av_percentual(valores_receitas_brutas)
+                    print("DEBUG: recalcular_por_av_percentual concluído com sucesso")
+                except Exception as e:
+                    # Log do erro mas não falhar o salvamento
+                    print(f"ERROR: Erro ao recalcular por AV%: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+                    # Adicionar o erro à lista mas não bloquear
+                    erros.append(f"Erro ao recalcular por AV%: {str(e)}")
+            
+            # Verificar se há erros que impedem o salvamento
+            erros_criticos = [e for e in erros if 'não encontrado' in e.lower() or 'inválido' in e.lower()]
+            
+            if erros_criticos:
                 return JsonResponse({
                     'success': False,
-                    'error': f"Salvos: {sucessos}, Erros: {len(erros)}. Primeiro erro: {erros[0]}"
+                    'error': f"Salvos: {sucessos}, Erros: {len(erros_criticos)}. Primeiro erro: {erros_criticos[0]}"
                 })
             else:
                 return JsonResponse({
                     'success': True,
-                    'message': f"{sucessos} valores salvos com sucesso"
+                    'message': f"{sucessos} valores salvos com sucesso" + (f". {len(erros)} aviso(s)." if erros else "")
                 })
         else:
             # Valor único (compatibilidade com versão anterior)
@@ -80,6 +130,27 @@ def update_orcamento_valor(request):
             
             try:
                 orcamento = Orcamento.objects.get(id=orcamento_id)
+                
+                # Verificar se existe encerramento para o mês/ano do orçamento
+                # O encerramento é por mês/ano, então comparamos mês e ano
+                encerramento = EncerramentoOrcamento.objects.filter(
+                    data__year=orcamento.data.year,
+                    data__month=orcamento.data.month
+                ).first()
+                if encerramento:
+                    return JsonResponse({
+                        'success': False,
+                        'error': f'Orçamento encerrado para {orcamento.data.strftime("%m/%Y")}. Não é possível alterar valores.'
+                    })
+                
+                # Verificar se a conta pertence ao grupo RECEITAS BRUTAS (DRE ID = 2)
+                if orcamento.conta.dre_id == 2:
+                    recalcular_por_av_percentual([{
+                        'orcamento': orcamento,
+                        'novo_valor': valor,
+                        'data': orcamento.data
+                    }])
+                
                 orcamento.valor = valor
                 orcamento.save()
                 return JsonResponse({'success': True})
@@ -104,6 +175,221 @@ def update_orcamento_valor(request):
             'success': False,
             'error': str(e)
         })
+
+
+def recalcular_por_av_percentual(valores_receitas_brutas):
+    """
+    Recalcula valores de Deduções (ID 3) e Despesas Variáveis (ID 6)
+    baseado na Análise Vertical (AV%) dos últimos 4 meses do REALIZADO (VW_REALIZADO_BI)
+    onde tipo = 2 (faturamento)
+    """
+    from dateutil.relativedelta import relativedelta
+    from django.db.models import Avg, Q, Sum
+    from datetime import timedelta, datetime
+    
+    # Para cada valor de receita editado
+    for item_receita in valores_receitas_brutas:
+        orcamento_receita = item_receita['orcamento']
+        novo_valor_receita = item_receita['novo_valor']
+        data_receita_str = item_receita['data']
+        
+        # Converter data_receita para objeto date
+        try:
+            if isinstance(data_receita_str, str):
+                data_receita = datetime.strptime(data_receita_str, '%Y-%m-%d').date()
+            else:
+                data_receita = data_receita_str
+        except:
+            data_receita = orcamento_receita.data
+        
+        # Obter as 4 datas anteriores (4 meses anteriores)
+        datas_anteriores = []
+        for i in range(1, 5):
+            try:
+                data_anterior = data_receita - relativedelta(months=i)
+                datas_anteriores.append(data_anterior)
+            except:
+                continue
+        
+        # Calcular data inicial e final para todas as consultas
+        # Data inicial (primeiro dia do mês que é 4 meses atrás)
+        data_inicio = (data_receita - relativedelta(months=4)).replace(day=1)
+        
+        # Data final (último dia do mês anterior)
+        data_fim = data_receita.replace(day=1) - relativedelta(days=1)
+        
+        # Buscar receita total dos últimos 4 meses UMA VEZ
+        with connection.cursor() as cursor:
+            query_receita = """
+                SELECT SUM(valor) as total_receita,
+                       CAST(COUNT(DISTINCT YEAR(data) * 100 + MONTH(data)) as FLOAT) as meses_encontrados
+                FROM VW_REALIZADO_BI
+                WHERE tipo = '2'
+                AND cdEmpresa = %s
+                AND data BETWEEN %s AND %s
+                AND cdConta IN (
+                    SELECT REPLACE(codigo, '.', '') FROM Gestao_conta WHERE dre_id = 2
+                )
+            """
+            cursor.execute(query_receita, [orcamento_receita.empresa.codigo_BI, data_inicio, data_fim])
+            result = cursor.fetchone()
+            valor_receita_total = result[0] if result and result[0] else 0
+            meses_encontrados = result[1] if result and result[1] else 0
+        
+        # Buscar TODAS as despesas (Deduções + Despesas Variáveis) dos últimos 4 meses UMA VEZ
+        # e agrupar por empresa e conta
+        despesas_realizadas = {}
+        
+        for dre_id in [3, 6]:  # Deduções (3) e Despesas Variáveis (6)
+            # Buscar todas as contas desta DRE e remover pontos dos códigos
+            contas_dre = Conta.objects.filter(dre_id=dre_id)
+            codigos_contas = [conta.codigo.replace('.', '') for conta in contas_dre]
+            
+            if codigos_contas:
+                with connection.cursor() as cursor:
+                    # Criar placeholders dinâmicos para a lista de códigos
+                    placeholders = ','.join(['%s'] * len(codigos_contas))
+                    query_despesas = f"""
+                        SELECT cdConta, SUM(valor) as total_conta
+                        FROM VW_REALIZADO_BI
+                        WHERE cdEmpresa = %s
+                        AND data BETWEEN %s AND %s
+                        AND cdConta IN ({placeholders})
+                        GROUP BY cdConta
+                    """
+                    params = [orcamento_receita.empresa.codigo_BI, data_inicio, data_fim] + codigos_contas
+                    
+                    cursor.execute(query_despesas, params)
+                    resultados = cursor.fetchall()
+                    
+                    # Armazenar os valores em um dicionário
+                    for cd_conta, total in resultados:
+                        despesas_realizadas[cd_conta] = total
+        
+        # Para cada DRE que precisa ser recalculada (ID 3 e 6)
+        for dre_id in [3, 6]:  # Deduções (3) e Despesas Variáveis (6)
+            # Buscar todas as contas desta DRE
+            contas_dre = Conta.objects.filter(dre_id=dre_id)
+            
+            for conta in contas_dre:
+                # Para cada conta, buscar o orçamento do mês editado
+                orcamentos_mes_atual = Orcamento.objects.filter(
+                    conta=conta,
+                    empresa=orcamento_receita.empresa,
+                    data__year=data_receita.year,
+                    data__month=data_receita.month,
+                    centro_custo=orcamento_receita.centro_custo
+                )
+                
+                # Se não existir orçamento para esta conta no mês atual, criar um
+                if not orcamentos_mes_atual.exists():
+                    print(f"CREATE: Criando novo orçamento para {conta.codigo}")
+                    # Criar novo orçamento
+                    novo_orcamento = Orcamento.objects.create(
+                        empresa=orcamento_receita.empresa,
+                        data=data_receita,
+                        conta=conta,
+                        valor=0,
+                        centro_custo=orcamento_receita.centro_custo
+                    )
+                    print(f"CREATED: Orçamento criado com ID {novo_orcamento.id}")
+                    orcamentos_mes_atual = Orcamento.objects.filter(
+                        conta=conta,
+                        empresa=orcamento_receita.empresa,
+                        data__year=data_receita.year,
+                        data__month=data_receita.month,
+                        centro_custo=orcamento_receita.centro_custo
+                    )
+                
+                # Para cada orçamento encontrado para o mês atual
+                for orcamento_atual in orcamentos_mes_atual:
+                    # Buscar o valor da conta no dicionário de despesas realizadas
+                    codigo_conta_sem_ponto = conta.codigo.replace('.', '')
+                    valor_conta_total = despesas_realizadas.get(codigo_conta_sem_ponto, 0)
+                    
+                    # Calcular o AV% médio
+                    if valor_receita_total > 0 and valor_conta_total > 0:
+                        av_medio = (valor_conta_total / valor_receita_total) * 100
+                    else:
+                        av_medio = 0
+                    
+                    # Calcular novo valor baseado no AV% e no novo valor de receita
+                    # Buscar receita total do mês editado (ORÇADO - somando todos os centro_custos)
+                    receitas_mes_atual = Orcamento.objects.filter(
+                        conta__dre_id=2,
+                        empresa=orcamento_receita.empresa,
+                        data__year=data_receita.year,
+                        data__month=data_receita.month
+                    )
+                    receita_total_mes = receitas_mes_atual.aggregate(
+                        total=Sum('valor')
+                    )['total'] or 0
+                    
+                    print(f"INFO: receita_total_mes={receita_total_mes}, av_medio={av_medio}")
+                    
+                    # Calcular novo valor da conta
+                    if receita_total_mes > 0 and av_medio > 0:
+                        novo_valor_conta = (receita_total_mes * av_medio) / 100
+                        print(f"SAVING: Conta {conta.codigo} - ID Orçamento: {orcamento_atual.id}, Valor antigo: {orcamento_atual.valor}, Novo valor: {novo_valor_conta}")
+                        orcamento_atual.valor = novo_valor_conta
+                        orcamento_atual.save()
+                        print(f"SAVED: Salvo com sucesso! Novo valor na base: {orcamento_atual.valor}")
+                    else:
+                        print(f"SKIP: Não salvando porque receita_total_mes={receita_total_mes} ou av_medio={av_medio}")
+
+
+def calcular_av_recente_realizado(conta, empresa, data_limite):
+    """
+    Calcula o AV% mais recente disponível para uma conta no REALIZADO,
+    procurando em meses anteriores até encontrar dados na VW_REALIZADO_BI
+    """
+    from dateutil.relativedelta import relativedelta
+    
+    for i in range(1, 12):  # Buscar até 12 meses atrás
+        try:
+            data_busca = data_limite - relativedelta(months=i)
+        except:
+            continue
+        
+        # Buscar valor de receita bruta REALIZADO
+        # Obs: cdConta na view não tem pontos (ex: 20202 ao invés de 2.02.02)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT SUM(valor) as total
+                FROM VW_REALIZADO_BI
+                WHERE tipo = '2'
+                AND cdEmpresa = %s
+                AND YEAR(data) = %s
+                AND MONTH(data) = %s
+                AND cdConta IN (
+                    SELECT REPLACE(codigo, '.', '') FROM Gestao_conta WHERE dre_id = 2
+                )
+            """, [empresa.codigo_BI, data_busca.year, data_busca.month])
+            result = cursor.fetchone()
+            valor_receita = result[0] if result and result[0] else 0
+        
+        # Remover pontos do código da conta para comparação
+        codigo_conta_sem_ponto = conta.codigo.replace('.', '')
+        
+        # Buscar valor desta conta REALIZADA (sem filtro de tipo para despesas)
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT SUM(valor) as total
+                FROM VW_REALIZADO_BI
+                WHERE cdEmpresa = %s
+                AND YEAR(data) = %s
+                AND MONTH(data) = %s
+                AND cdConta = %s
+            """, [empresa.codigo_BI, data_busca.year, data_busca.month, codigo_conta_sem_ponto])
+            result = cursor.fetchone()
+            valor_conta = result[0] if result and result[0] else 0
+        
+        if valor_receita > 0:
+            av_percentual = (valor_conta / valor_receita) * 100
+            return av_percentual
+    
+    # Se não encontrar dados, retornar 0
+    return 0
 
 
 class OrcamentoMenuView(LoginRequiredMixin, View):
@@ -212,7 +498,8 @@ class DreOrcadoView(LoginRequiredMixin, View):
             end as nivel2,
             c.codigo +' - '+ c.nome nivel3,
             convert(varchar(5), e.codigo_bi) + ' - ' + cr.codigo + ' - ' +  cr.nome CentroResultado,
-            o.valor valor
+            o.valor valor,
+            c.natureza natureza
         from Gestao_orcamento o
         join RH_empresa e on e.id = o.empresa_id
         join gestao_conta c on c.id = o.conta_id
@@ -265,6 +552,27 @@ class DreOrcadoView(LoginRequiredMixin, View):
         # Garantir que todas as DREs apareçam, mesmo sem dados
         dados_hierarquicos_completos = self.estrutura_completa_dre(dres, dados_hierarquicos, datas_unicas)
         
+        # Obter receita por data para cálculo do percentual
+        receita_por_data = {}
+        receita_dre_id = 2  # ID 2 é a receita total
+        if receita_dre_id in dados_hierarquicos_completos:
+            receita_por_data = dados_hierarquicos_completos[receita_dre_id]['valores_por_data']
+        
+        # Verificar quais datas têm encerramento de orçamento
+        # Criar um conjunto com as datas (mês/ano) que têm encerramento
+        datas_encerradas = set()
+        if datas_unicas:
+            # Buscar todos os encerramentos e comparar por mês/ano
+            encerramentos = EncerramentoOrcamento.objects.all()
+            for data_unica in datas_unicas:
+                # Verificar se existe encerramento para o mês/ano desta data
+                encerramento = encerramentos.filter(
+                    data__year=data_unica.year,
+                    data__month=data_unica.month
+                ).first()
+                if encerramento:
+                    datas_encerradas.add(data_unica)
+        
         context = {
             'empresas': empresas,
             'anos': anos,
@@ -272,6 +580,8 @@ class DreOrcadoView(LoginRequiredMixin, View):
             'dres': dres,
             'dados_hierarquicos': dados_hierarquicos_completos,
             'datas_unicas': datas_unicas,
+            'receita_por_data': receita_por_data,  # Passar receita para o template
+            'datas_encerradas': datas_encerradas,  # Passar datas com encerramento
             'filtros': {
                 'ano': ano,
                 'mes': mes_list,  # Lista de meses selecionados
@@ -288,7 +598,7 @@ class DreOrcadoView(LoginRequiredMixin, View):
         datas_unicas = set()
         
         for i, row in enumerate(resultados):
-            data, id_orcamento, cd_empresa, nm_empresa, dre_id, dre_nivel, nivel1, nivel2, nivel3, centro_resultado, valor = row
+            data, id_orcamento, cd_empresa, nm_empresa, dre_id, dre_nivel, nivel1, nivel2, nivel3, centro_resultado, valor, natureza = row
             
             # Adicionar data ao conjunto de datas únicas
             if data:
@@ -337,7 +647,8 @@ class DreOrcadoView(LoginRequiredMixin, View):
                     'nome': centro_resultado,
                     'valor': 0,
                     'valores_por_data': {},
-                    'orcamento_ids': {}
+                    'orcamento_ids': {},
+                    'natureza': natureza  # Armazenar natureza da conta
                 }
             
             # Processar valor

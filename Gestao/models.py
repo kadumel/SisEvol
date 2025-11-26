@@ -183,7 +183,15 @@ class reponsavel_conta(models.Model):
     def __str__(self):
         return self.conta.nome +' - '+ self.responsavel.username
     
+
+class EncerramentoOrcamento(models.Model):
+    data = models.DateField()
+    usuario = models.ForeignKey(User, on_delete=models.PROTECT)
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True, null=True, blank=True)
     
+    def __str__(self):
+        return f'Encerramento - {self.data.strftime("%d/%m/%Y")} - {self.usuario.username}'
 
     
     

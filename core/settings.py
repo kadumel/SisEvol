@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'PerfilMenus',
     'Gestao',
     'cardapio',
+    'manad',
 ]
 
 MIDDLEWARE = [

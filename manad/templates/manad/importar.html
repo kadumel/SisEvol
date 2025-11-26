@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}MANAD - Importar Arquivo{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">
+                <i class="bi bi-upload me-2"></i>
+                Importar Arquivo MANAD
+            </h1>
+            <p class="text-muted">Faça upload do arquivo MANAD para importação dos dados laborais</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Upload do Arquivo
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="formImportarManad" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-4">
+                            <label for="arquivo" class="form-label">
+                                <i class="bi bi-file-earmark me-2"></i>
+                                Selecione o arquivo MANAD
+                            </label>
+                            <input type="file" class="form-control" id="arquivo" name="arquivo" accept=".txt,.manad" required>
+                            <div class="form-text">
+                                Formatos aceitos: .txt, .manad
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="data_referencia" class="form-label">
+                                <i class="bi bi-calendar me-2"></i>
+                                Data de Referência (Opcional)
+                            </label>
+                            <input type="month" class="form-control" id="data_referencia" name="data_referencia">
+                            <div class="form-text">
+                                Mês/Ano de referência dos dados (formato: MM/AAAA)
+                            </div>
+                        </div>
+
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Informações:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>O arquivo deve estar no formato MANAD conforme especificação oficial</li>
+                                <li>A importação pode levar alguns minutos dependendo do tamanho do arquivo</li>
+                                <li>Você poderá acompanhar o progresso na lista de importações</li>
+                            </ul>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-upload me-2"></i>Importar Arquivo
+                            </button>
+                            <a href="{% url 'indexManad' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-2"></i>Voltar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Informações sobre o formato MANAD -->
+            <div class="card border-0 shadow-sm mt-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-question-circle me-2"></i>
+                        Sobre o formato MANAD
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p>O MANAD (Manual Normativo de Arquivos Digitais) é um formato padronizado para apresentação de informações laborais à Secretaria da Receita Previdenciária.</p>
+                    <p class="mb-0"><strong>Registros suportados:</strong></p>
+                    <ul>
+                        <li><strong>0000</strong> - Cabeçalho do arquivo</li>
+                        <li><strong>0100</strong> - Dados da empresa</li>
+                        <li><strong>K050</strong> - Cadastro de trabalhadores</li>
+                        <li><strong>K100</strong> - Lotações</li>
+                        <li><strong>K150</strong> - Rubricas/Eventos da folha</li>
+                        <li><strong>K250</strong> - Mestre de folha de pagamento</li>
+                        <li><strong>K300</strong> - Itens de folha de pagamento</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    $(document).ready(function() {
+        $('#formImportarManad').on('submit', function(e) {
+            const arquivo = $('#arquivo')[0].files[0];
+            if (!arquivo) {
+                e.preventDefault();
+                alert('Por favor, selecione um arquivo para importar.');
+                return false;
+            }
+            
+            // Mostrar loading
+            const btnSubmit = $(this).find('button[type="submit"]');
+            btnSubmit.prop('disabled', true);
+            btnSubmit.html('<span class="spinner-border spinner-border-sm me-2"></span>Importando...');
+        });
+    });
+</script>
+{% endblock %}
+
