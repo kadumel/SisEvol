@@ -41,7 +41,11 @@ class FrequenciaEventoAdmin(DateHierarchyCurrentMonthMixin, admin.ModelAdmin):
         js = ('js/adminRH.js',)
 
 
-admin.site.register(Cargo)
+@admin.register(Cargo)
+class CargoAdmin(admin.ModelAdmin):
+    list_display = ['cargo']
+
+
 admin.site.register(TipoContrato)
 admin.site.register(Banco)
 admin.site.register(Lotacao)
