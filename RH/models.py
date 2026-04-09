@@ -49,11 +49,20 @@ FREQUENCIA_CHOICES = (
     ("S", "SAÍDA_ANTECIPADA"),
 )
 
+class Operacao(models.Model):
+    operacao = models.CharField(max_length=100, blank=False, null=False)
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.operacao}"
+
 class Empresa(models.Model):
     codigo_BI = models.IntegerField()
     empresa = models.CharField(max_length=100, blank=False, null=False)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+    operacao = models.ForeignKey('Operacao', Operacao, null=True, blank=True)
     
     def __str__(self):
         return f"{self.empresa}"

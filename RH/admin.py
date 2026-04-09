@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Cargo, Empresa, TipoContrato, Banco, Lotacao, Turno, Vaga, Funcionario, Gestor, ConfigGeral, Auditoria, TipoEvento, Evento, ControleEvento, DiaEvento, FrequenciaEvento
+from .models import Cargo, Empresa, TipoContrato, Banco, Lotacao, Turno, Vaga, Funcionario, Gestor, ConfigGeral, Auditoria, TipoEvento, Evento, ControleEvento, DiaEvento, FrequenciaEvento, Operacao
 from .admin_mixins import DateHierarchyCurrentMonthMixin
 
 # Register your models here.
@@ -10,7 +10,12 @@ class ConfigGeralAdmin(admin.ModelAdmin):
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ['codigo_BI','empresa']
+    list_display = ['codigo_BI','empresa','operacao']
+    list_editable = ['operacao']
+
+@admin.register(Operacao)
+class OperacaoAdmin(admin.ModelAdmin):
+    list_display = ['operacao']
 
 
 @admin.register(DiaEvento)
