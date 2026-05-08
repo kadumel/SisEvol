@@ -36,11 +36,7 @@
     <div class="card-body">
       <form method="GET" id="filtrosForm">
         <div class="row g-3">
-          <div class="col-md-2">
-            <label class="form-label">Competência</label>
-            <input type="month" class="form-control" name="competencia" value="{{ competencia }}" onchange="this.form.submit()">
-            <small class="text-muted">Para indicadores de turnover e absenteísmo</small>
-          </div>
+          {% include 'RH/includes/competencia_mes_ano_filtro.html' with competencia_ajuda="Para indicadores de turnover e absenteísmo" %}
           <div class="col-md-2">
             <label class="form-label d-flex justify-content-between align-items-center">
               Empresa
@@ -68,22 +64,58 @@
             </div>
           </div>
           <div class="col-md-2">
-            <label class="form-label">Lotação</label>
-            <select class="form-select" name="lotacao" onchange="this.form.submit()">
-              <option value="">Todas</option>
+            <label class="form-label d-flex justify-content-between align-items-center">
+              Lotação
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selecionarTodasLotacoes()" title="Selecionar todas">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="desmarcarTodasLotacoes()" title="Limpar (todas)">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
               {% for lotacao in lotacoes %}
-              <option value="{{ lotacao.id }}" {% if filtros.lotacao_id == lotacao.id|stringformat:"s" %}selected{% endif %}>{{ lotacao.lotacao }}</option>
+              <div class="form-check">
+                <input class="form-check-input lotacao-checkbox" type="checkbox" name="lotacao" value="{{ lotacao.id }}"
+                       id="lotacao_{{ lotacao.id }}"
+                       {% if lotacao.id|stringformat:"s" in filtros.lotacao %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="lotacao_{{ lotacao.id }}">
+                  {{ lotacao.lotacao }}
+                </label>
+              </div>
               {% endfor %}
-            </select>
+            </div>
+            <small class="text-muted">Nenhuma = todas</small>
           </div>
           <div class="col-md-2">
-            <label class="form-label">Cargo</label>
-            <select class="form-select" name="cargo" onchange="this.form.submit()">
-              <option value="">Todos</option>
+            <label class="form-label d-flex justify-content-between align-items-center">
+              Cargo
+              <div class="btn-group btn-group-sm" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" onclick="selecionarTodosCargos()" title="Selecionar todos">
+                  <i class="bi bi-check-all"></i>
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="desmarcarTodosCargos()" title="Limpar (todos)">
+                  <i class="bi bi-x-lg"></i>
+                </button>
+              </div>
+            </label>
+            <div class="border rounded p-2" style="max-height: 120px; overflow-y: auto;">
               {% for cargo in cargos %}
-              <option value="{{ cargo.id }}" {% if filtros.cargo_id == cargo.id|stringformat:"s" %}selected{% endif %}>{{ cargo.cargo }}</option>
+              <div class="form-check">
+                <input class="form-check-input cargo-checkbox" type="checkbox" name="cargo" value="{{ cargo.id }}"
+                       id="cargo_{{ cargo.id }}"
+                       {% if cargo.id|stringformat:"s" in filtros.cargo %}checked{% endif %}
+                       onchange="this.form.submit()">
+                <label class="form-check-label small" for="cargo_{{ cargo.id }}">
+                  {{ cargo.cargo }}
+                </label>
+              </div>
               {% endfor %}
-            </select>
+            </div>
+            <small class="text-muted">Nenhum = todos</small>
           </div>
           <div class="col-md-2">
             <label class="form-label">Status</label>
@@ -754,6 +786,26 @@ function desmarcarTodasEmpresas() {
     document.getElementById('filtrosForm').appendChild(hiddenField);
   }
   
+  document.getElementById('filtrosForm').submit();
+}
+
+function selecionarTodasLotacoes() {
+  document.querySelectorAll('.lotacao-checkbox').forEach(cb => { cb.checked = true; });
+  document.getElementById('filtrosForm').submit();
+}
+
+function desmarcarTodasLotacoes() {
+  document.querySelectorAll('.lotacao-checkbox').forEach(cb => { cb.checked = false; });
+  document.getElementById('filtrosForm').submit();
+}
+
+function selecionarTodosCargos() {
+  document.querySelectorAll('.cargo-checkbox').forEach(cb => { cb.checked = true; });
+  document.getElementById('filtrosForm').submit();
+}
+
+function desmarcarTodosCargos() {
+  document.querySelectorAll('.cargo-checkbox').forEach(cb => { cb.checked = false; });
   document.getElementById('filtrosForm').submit();
 }
 </script>

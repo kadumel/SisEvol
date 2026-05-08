@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta, EncerramentoOrcamento
+from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta, EncerramentoOrcamento, Feriado
 from django.contrib.admin.filters import SimpleListFilter
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -7,6 +7,15 @@ from .admin_mixins import DateHierarchyCurrentMonthMixin
 from django import forms
 import calendar
 # Register your models here.
+
+@admin.register(Feriado)
+class FeriadoAdmin(admin.ModelAdmin):
+    list_display = ['data', 'descricao']
+    list_filter = ['data']
+    search_fields = ['descricao']
+    date_hierarchy = 'data'
+    ordering = ['data']
+
 
 @admin.register(EncerramentoOrcamento)
 class EncerramentoOrcamentoAdmin(admin.ModelAdmin):
@@ -462,3 +471,6 @@ class reponsavel_contaAdmin(admin.ModelAdmin):
     list_display_links = ['empresa','conta']
     list_select_related = ['empresa','conta','responsavel']
     list_filter = ['empresa','conta','responsavel']
+
+
+

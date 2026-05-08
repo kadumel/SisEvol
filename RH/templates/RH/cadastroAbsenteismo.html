@@ -36,10 +36,7 @@
     <div class="card-body">
       <form method="GET" id="filtrosForm">
         <div class="row g-3">
-          <div class="col-md-2">
-            <label class="form-label">Competência</label>
-            <input type="month" class="form-control" name="competencia" value="{{ competencia }}" onchange="this.form.submit()">
-          </div>
+          {% include 'RH/includes/competencia_mes_ano_filtro.html' %}
           <div class="col-md-2">
             <label class="form-label">Empresa</label>
             <select class="form-select" name="empresa" onchange="this.form.submit()">
