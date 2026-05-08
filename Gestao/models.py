@@ -193,7 +193,16 @@ class EncerramentoOrcamento(models.Model):
     def __str__(self):
         return f'Encerramento - {self.data.strftime("%d/%m/%Y")} - {self.usuario.username}'
 
-    
-    
-    
-    
+
+class Feriado(models.Model):
+    data = models.DateField()
+    descricao = models.CharField(max_length=200)
+
+    class Meta:
+        verbose_name = 'Feriado'
+        verbose_name_plural = 'Feriados'
+        db_table = 'gestao_feriado'
+        ordering = ['data']
+
+    def __str__(self):
+        return f'{self.data.strftime("%d/%m/%Y")} — {self.descricao}'

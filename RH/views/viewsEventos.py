@@ -16,6 +16,80 @@ from django.db import connection
 from django.db.models import Q
 import json
 
+
+def _normalizar_competencia_param(raw):
+    """
+    Valor para input month e uso interno: sempre YYYY-MM (só mês/ano).
+    Aceita YYYY-MM ou YYYY-MM-DD (considera apenas ano e mês).
+    """
+    hoje = datetime.now().date().replace(day=1)
+    padrao = f"{hoje.year:04d}-{hoje.month:02d}"
+    if not raw or not str(raw).strip():
+        return padrao
+    partes = str(raw).strip().split('-')
+    try:
+        ano, mes = int(partes[0]), int(partes[1])
+    except (IndexError, ValueError):
+        return padrao
+    return f"{ano:04d}-{mes:02d}"
+
+
+def _ano_mes_de_competencia(competencia):
+    """(ano, mes) inteiros a partir de string YYYY-MM-DD ou YYYY-MM."""
+    partes = str(competencia).strip().split('-')
+    return int(partes[0]), int(partes[1])
+
+
+MESES_COMPETENCIA_CHOICES = [
+    ('01', 'Janeiro'), ('02', 'Fevereiro'), ('03', 'Março'), ('04', 'Abril'),
+    ('05', 'Maio'), ('06', 'Junho'), ('07', 'Julho'), ('08', 'Agosto'),
+    ('09', 'Setembro'), ('10', 'Outubro'), ('11', 'Novembro'), ('12', 'Dezembro'),
+]
+
+
+def _anos_select_competencia(ano_referencia=None):
+    """Anos decrescentes para o filtro; inclui ano_referencia se estiver fora do intervalo base."""
+    hoje_y = datetime.now().year
+    anos = list(range(hoje_y + 2, hoje_y - 13, -1))
+    if ano_referencia is not None:
+        try:
+            y = int(ano_referencia)
+            if y not in anos:
+                anos.append(y)
+                anos.sort(reverse=True)
+        except (ValueError, TypeError):
+            pass
+    return anos
+
+
+def _competencia_from_request(request):
+    """
+    Monta YYYY-MM a partir de competencia_ano + competencia_mes (se enviados no GET)
+    ou do parâmetro legado competencia. Assim todo submit do formulário reflete a competência.
+    """
+    ano_g = request.GET.get('competencia_ano')
+    mes_g = request.GET.get('competencia_mes')
+    if ano_g is not None and str(ano_g).strip() != '' and mes_g is not None and str(mes_g).strip() != '':
+        try:
+            return _normalizar_competencia_param(f"{int(ano_g)}-{int(mes_g)}")
+        except (ValueError, TypeError):
+            pass
+    return _normalizar_competencia_param(request.GET.get('competencia'))
+
+
+def _context_competencia_filtro(request):
+    """Contexto compartilhado pelos templates do filtro mês/ano (dashboard e absenteísmo)."""
+    competencia = _competencia_from_request(request)
+    ano, mes = _ano_mes_de_competencia(competencia)
+    return {
+        'competencia': competencia,
+        'competencia_mes': f'{mes:02d}',
+        'competencia_ano': ano,
+        'anos_competencia': _anos_select_competencia(ano),
+        'meses_competencia': MESES_COMPETENCIA_CHOICES,
+    }
+
+
 # Create your views here.
 
 
@@ -1196,11 +1270,8 @@ class GestaoAbsenteismoView(LoginRequiredMixin, View):
         lotacao_id = request.GET.get('lotacao')
         cargo_id = request.GET.get('cargo')
         status_filter = request.GET.getlist('status')
-        competencia = request.GET.get('competencia')
-        
-        # Definir competência padrão (mês atual)
-        if not competencia:
-            competencia = datetime.now().strftime('%Y-%m')
+        ctx_comp = _context_competencia_filtro(request)
+        competencia = ctx_comp['competencia']
         
         # Definir status padrão (todos selecionados)
         if not status_filter:
@@ -1225,7 +1296,7 @@ class GestaoAbsenteismoView(LoginRequiredMixin, View):
         funcionarios = funcionarios.select_related('empresa', 'lotacao', 'cargo').order_by('nome')
         
         # Buscar registros de absenteísmo para a competência
-        ano, mes = competencia.split('-')
+        ano, mes = _ano_mes_de_competencia(competencia)
         data_inicio = datetime(int(ano), int(mes), 1).date()
         if int(mes) == 12:
             data_fim = datetime(int(ano) + 1, 1, 1).date() - timedelta(days=1)
@@ -1296,7 +1367,7 @@ class GestaoAbsenteismoView(LoginRequiredMixin, View):
             'cargos': cargos,
             'registros_absenteismo': registros_absenteismo,
             'funcionarios_absenteismo': funcionarios_absenteismo,
-            'competencia': competencia,
+            **ctx_comp,
             'estatisticas': {
                 'total_funcionarios': total_funcionarios,
                 'total_registros': total_registros,
@@ -1340,11 +1411,8 @@ class CadastroAbsenteismoView(LoginRequiredMixin, View):
         empresa_filter = request.GET.getlist('empresa')
         lotacao_id = request.GET.get('lotacao')
         cargo_id = request.GET.get('cargo')
-        competencia = request.GET.get('competencia')
-        
-        # Definir competência padrão (mês atual)
-        if not competencia:
-            competencia = datetime.now().strftime('%Y-%m')
+        ctx_comp = _context_competencia_filtro(request)
+        competencia = ctx_comp['competencia']
         
         # Filtrar funcionários
         funcionarios = Funcionario.objects.filter(status='A', deleted='N')
@@ -1358,7 +1426,7 @@ class CadastroAbsenteismoView(LoginRequiredMixin, View):
         funcionarios = funcionarios.select_related('empresa', 'lotacao', 'cargo').order_by('nome')
         
         # Buscar registros de absenteísmo existentes para a competência
-        ano, mes = competencia.split('-')
+        ano, mes = _ano_mes_de_competencia(competencia)
         data_inicio = datetime(int(ano), int(mes), 1).date()
         if int(mes) == 12:
             data_fim = datetime(int(ano) + 1, 1, 1).date() - timedelta(days=1)
@@ -1383,7 +1451,7 @@ class CadastroAbsenteismoView(LoginRequiredMixin, View):
             'lotacoes': lotacoes,
             'cargos': cargos,
             'funcionarios': funcionarios,
-            'competencia': competencia,
+            **ctx_comp,
             'registros_dict': registros_dict,
             'data_inicio': data_inicio,
             'data_fim': data_fim,
@@ -1404,7 +1472,7 @@ class CadastroAbsenteismoView(LoginRequiredMixin, View):
         
         try:
             funcionario_id = request.POST.get('funcionario_id')
-            competencia = request.POST.get('competencia')
+            competencia_raw = request.POST.get('competencia')
             dias_trabalho = request.POST.get('dias_trabalho', 0)
             dias_falta = request.POST.get('dias_falta', 0)
             dias_justificados = request.POST.get('dias_justificados', 0)
@@ -1414,15 +1482,17 @@ class CadastroAbsenteismoView(LoginRequiredMixin, View):
             dias_ferias = request.POST.get('dias_ferias', 0)
             
             # Validar dados obrigatórios
-            if not funcionario_id or not competencia:
+            if not funcionario_id or not competencia_raw:
                 return JsonResponse({'status': 'error', 'message': 'Dados obrigatórios não fornecidos'})
+            
+            competencia = _normalizar_competencia_param(competencia_raw)
             
             # Buscar funcionário
             funcionario = get_object_or_404(Funcionario, id=funcionario_id)
             
             # Converter competência para data (primeiro dia do mês)
-            ano, mes = competencia.split('-')
-            data_registro = datetime(int(ano), int(mes), 1).date()
+            ano, mes = _ano_mes_de_competencia(competencia)
+            data_registro = datetime(ano, mes, 1).date()
             
             # Verificar se já existe registro para este funcionário nesta competência
             registro_existente = Absenteismo.objects.filter(
@@ -1494,10 +1564,11 @@ class SalvarAbsenteismoLoteView(LoginRequiredMixin, View):
                     
                     if funcionario_id and competencia:
                         funcionario = get_object_or_404(Funcionario, id=funcionario_id)
+                        competencia = _normalizar_competencia_param(competencia)
                         
                         # Converter competência para data (primeiro dia do mês)
-                        ano, mes = competencia.split('-')
-                        data_registro = datetime(int(ano), int(mes), 1).date()
+                        ano, mes = _ano_mes_de_competencia(competencia)
+                        data_registro = datetime(ano, mes, 1).date()
                         
                         # Verificar se já existe registro para este funcionário nesta competência
                         registro_existente = Absenteismo.objects.filter(
@@ -1554,14 +1625,14 @@ class DashboardRHView(LoginRequiredMixin, View):
         # Parâmetros de filtro
         empresa_filter = request.GET.getlist('empresa')
         empresa_desmarcadas = request.GET.get('empresa_desmarcadas')
-        lotacao_id = request.GET.get('lotacao')
-        cargo_id = request.GET.get('cargo')
+        lotacao_filter = request.GET.getlist('lotacao')
+        cargo_filter = request.GET.getlist('cargo')
         status_filter = request.GET.getlist('status')
-        competencia = request.GET.get('competencia')
-        
-        # Definir competência padrão (mês atual)
-        if not competencia:
-            competencia = datetime.now().strftime('%Y-%m')
+        ctx_comp = _context_competencia_filtro(request)
+        competencia = ctx_comp['competencia']
+        # Escalares opcionais (uma seleção) — evita NameError em contexto/templates legados
+        lotacao_id = str(lotacao_filter[0]) if len(lotacao_filter) == 1 else None
+        cargo_id = str(cargo_filter[0]) if len(cargo_filter) == 1 else None
         
         # Definir status padrão (todos selecionados)
         if not status_filter:
@@ -1576,20 +1647,35 @@ class DashboardRHView(LoginRequiredMixin, View):
         funcionarios = Funcionario.objects.filter(deleted='N')
         if empresa_filter and not empresa_desmarcadas:
             funcionarios = funcionarios.filter(empresa_id__in=empresa_filter)
-        if lotacao_id:
-            funcionarios = funcionarios.filter(lotacao_id=lotacao_id)
-        if cargo_id:
-            funcionarios = funcionarios.filter(cargo_id=cargo_id)
+        if lotacao_filter:
+            funcionarios = funcionarios.filter(lotacao_id__in=lotacao_filter)
+        if cargo_filter:
+            funcionarios = funcionarios.filter(cargo_id__in=cargo_filter)
         if status_filter:
             funcionarios = funcionarios.filter(status__in=status_filter)
 
         funcionarios = funcionarios.select_related('empresa', 'lotacao', 'cargo').order_by('nome')
         
-        # Calcular indicadores básicos
-        total_funcionarios = funcionarios.count()
-        funcionarios_ativos = funcionarios.filter(status='A').count()
-        funcionarios_afastados = funcionarios.filter(status='F').count()
-        funcionarios_demitidos = funcionarios.filter(status='D').count()
+        # Período da competência (alinhado ao cálculo de turnover)
+        ano, mes = _ano_mes_de_competencia(competencia)
+        data_inicio = datetime(ano, mes, 1).date()
+        if mes == 12:
+            data_fim = datetime(ano + 1, 1, 1).date() - timedelta(days=1)
+        else:
+            data_fim = datetime(ano, mes + 1, 1).date() - timedelta(days=1)
+        
+        # Colaboradores com vínculo na competência (admitidos até o fim do mês e não desligados antes do início)
+        funcionarios_no_mes = funcionarios.filter(
+            dt_admissao__lte=data_fim
+        ).filter(
+            Q(dt_demissao__isnull=True) | Q(dt_demissao__gte=data_inicio)
+        )
+        
+        # Indicadores básicos (recorte pela competência selecionada)
+        total_funcionarios = funcionarios_no_mes.count()
+        funcionarios_ativos = funcionarios_no_mes.filter(status='A').count()
+        funcionarios_afastados = funcionarios_no_mes.filter(status='F').count()
+        funcionarios_demitidos = funcionarios_no_mes.filter(status='D').count()
         
         # Indicadores por gênero
         funcionarios_masculino = funcionarios.filter(sexo='M').count()
@@ -1651,12 +1737,7 @@ class DashboardRHView(LoginRequiredMixin, View):
         turnover_evolucao = []
         
         if competencia:
-            ano, mes = competencia.split('-')
-            data_inicio = datetime(int(ano), int(mes), 1).date()
-            if int(mes) == 12:
-                data_fim = datetime(int(ano) + 1, 1, 1).date() - timedelta(days=1)
-            else:
-                data_fim = datetime(int(ano), int(mes) + 1, 1).date() - timedelta(days=1)
+            # data_inicio / data_fim / ano / mes já definidos acima para os cards e o período
             
             # Funcionários que entraram no mês
             admissoes_mes = funcionarios.filter(
@@ -1679,10 +1760,12 @@ class DashboardRHView(LoginRequiredMixin, View):
             
             # Calcular turnover mensal pela fórmula: ((Admissões + Desligamentos) / 2) / Nº Médio de Colaboradores * 100
             if colaboradores_medios_mes > 0:
-                turnover_mensal = round((((admissoes_mes + demissoes_mes) / 2) / funcionarios_ativos) * 100, 2)
+                turnover_mensal = round(
+                    (((admissoes_mes + demissoes_mes) / 2) / colaboradores_medios_mes) * 100, 2
+                )
             
             print('--------------------------------Mensal--------------------------------')
-            print(admissoes_mes, demissoes_mes, colaboradores_medios_mes, funcionarios_ativos)
+            print(admissoes_mes, demissoes_mes, colaboradores_medios_mes, turnover_mensal)
             # Preparar agregadores para turnover anual ponderado por mês
             total_admissoes_mes = 0
             total_demissoes_mes = 0
@@ -1782,13 +1865,6 @@ class DashboardRHView(LoginRequiredMixin, View):
         # Calcular absenteísmo médio (se competência for relevante)
         absenteismo_medio = 0
         if competencia:
-            ano, mes = competencia.split('-')
-            data_inicio = datetime(int(ano), int(mes), 1).date()
-            if int(mes) == 12:
-                data_fim = datetime(int(ano) + 1, 1, 1).date() - timedelta(days=1)
-            else:
-                data_fim = datetime(int(ano), int(mes) + 1, 1).date() - timedelta(days=1)
-            
             registros_absenteismo = Absenteismo.objects.filter(
                 data__gte=data_inicio,
                 data__lte=data_fim,
@@ -1840,9 +1916,11 @@ class DashboardRHView(LoginRequiredMixin, View):
             'empresas': empresas,
             'lotacoes': lotacoes,
             'cargos': cargos,
-            'competencia': competencia,
+            **ctx_comp,
             'filtros': {
                 'empresa': empresa_filter or [],
+                'lotacao': lotacao_filter or [],
+                'cargo': cargo_filter or [],
                 'lotacao_id': lotacao_id or '',
                 'cargo_id': cargo_id or '',
                 'status': status_filter or [],

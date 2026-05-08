@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.urls import reverse
 from django.template.loader import render_to_string
 from django.views import View
-from ..models import Funcionario, Empresa, Lotacao, Cargo, ConfigGeral, Auditoria
+from ..models import Funcionario, Empresa, Lotacao, Cargo, ConfigGeral, Auditoria, Operacao
 from PerfilMenus.views import AcessoAcoes
 from django.contrib.auth.models import User, Group
 from datetime import datetime as dt
@@ -37,11 +37,13 @@ class ListFuncionarioView(LoginRequiredMixin, View):
         emp = Empresa.objects.values().distinct()
         lot = Lotacao.objects.values().distinct()
         car = Cargo.objects.values().distinct()
+        op = Operacao.objects.all().order_by('operacao')
         
         # Aplicar filtros se fornecidos
         empresa_filter = request.GET.get('empresa')
         lotacao_filter = request.GET.get('lotacao')
         cargo_filter = request.GET.get('cargo')
+        operacao_filter = request.GET.get('operacao')
         status_filter = request.GET.get('status')
         filtro_especial = request.GET.get('filtro_especial')
         
@@ -53,6 +55,9 @@ class ListFuncionarioView(LoginRequiredMixin, View):
         
         if cargo_filter and cargo_filter != 'Todos':
             func = func.filter(cargo__cargo=cargo_filter)
+
+        if operacao_filter and operacao_filter != 'Todos':
+            func = func.filter(empresa__operacao_id=operacao_filter)
         
         if status_filter and status_filter != 'Todos':
             if status_filter == 'Ativo':
@@ -99,10 +104,12 @@ class ListFuncionarioView(LoginRequiredMixin, View):
             'empresa': emp,
             'cargo': car,
             'lotacao': lot,
+            'operacao': op,
             'filtros': {
                 'empresa': empresa_filter or '',
                 'lotacao': lotacao_filter or '',
                 'cargo': cargo_filter or '',
+                'operacao': operacao_filter or '',
                 'status': status_filter or '',
                 'filtro_especial': filtro_especial or ''
             }
@@ -250,15 +257,17 @@ class RelatorioExcelView(LoginRequiredMixin, View):
             lot = request.POST.get('lot', 'Todos')
             car = request.POST.get('car', 'Todos')
             stt = request.POST.get('stt', 'Todos')
+            ope = request.POST.get('ope', 'Todos')
             
-            print(f"Parâmetros recebidos: emp={emp}, lot={lot}, car={car}, stt={stt}")
+            print(f"Parâmetros recebidos: emp={emp}, lot={lot}, car={car}, stt={stt}, ope={ope}")
             
             with connection.cursor() as cursor:
                 # Query SQL parametrizada para evitar SQL injection
                 query = """
                     SELECT 
                         f.id,
-                        E.empresa,
+                        e.empresa,
+                        op.operacao,
                         f.matricula,
                         CONVERT(varchar(10), f.dt_admissao, 103) as dt_admissao,
                         CONVERT(varchar(10), f.dt_demissao, 103) as dt_demissao,
@@ -293,7 +302,8 @@ class RelatorioExcelView(LoginRequiredMixin, View):
                         f.salario_fixo,
                         f.salario_compl 
                     FROM RH_funcionario f
-                    LEFT JOIN rh_empresa e ON e.id = f.empresa_id
+                    LEFT JOIN RH_empresa e ON e.id = f.empresa_id
+                    LEFT JOIN RH_operacao op ON op.id = e.operacao_id
                     LEFT JOIN RH_lotacao l ON l.id = f.lotacao_id
                     LEFT JOIN RH_cargo c ON c.id = f.cargo_id
                     LEFT JOIN RH_tipocontrato tc ON tc.id = f.tipo_contrato_id
@@ -317,6 +327,10 @@ class RelatorioExcelView(LoginRequiredMixin, View):
                 if car != 'Todos':
                     query += " AND c.cargo = %s"
                     params.append(car)
+
+                if ope != 'Todos':
+                    query += " AND op.id = %s"
+                    params.append(ope)
                 
                 if stt != 'Todos':
                     if stt == 'Ativo':
@@ -363,7 +377,7 @@ class RelatorioExcelView(LoginRequiredMixin, View):
             sheet["A7"] = ""
             
             # Cabeçalhos das colunas
-            headers = ['Id','Empresa','Matricula','Dt_Admissao','Dt_Demissao','Status','Funcionário','Dt_Nascimento','Lotacao','Tipo_Contrato','Cargo','Turno','Sexo','Naturalidade','RG','CPF','Conta_Bancaria',
+            headers = ['Id','Empresa','Operacao','Matricula','Dt_Admissao','Dt_Demissao','Status','Funcionário','Dt_Nascimento','Lotacao','Tipo_Contrato','Cargo','Turno','Sexo','Naturalidade','RG','CPF','Conta_Bancaria',
                     'Motivo_Contratacao','Dt_Primeiro_Termino','Dt_Segundo_Termino','Dt_Contrato_Experiencia','Dt_Ultimo_Aso','Dt_Aso_Periodico','Fone_Fixo','Fone_Celular','Folga','Plano_Saude_Titular',
                     'Plano_Saude_Dependente','Plano_Odonto_Titular','Plano_Odonto_Dependente','Vale_Transporte','Salario_Familia','Dependentes','Salario_Fixo','Salario_Compl']
         
@@ -372,7 +386,7 @@ class RelatorioExcelView(LoginRequiredMixin, View):
             
             fill = PatternFill(start_color="4F4F4F", end_color="4F4F4F", fill_type="solid")
             fontColumn = Font(size=10, name="Arial", color="F8F8FF", bold=True)
-            for row in sheet["A8:AI8"]:
+            for row in sheet["A8:AJ8"]:
                for cell in row:
                    cell.fill = fill
                    cell.font = fontColumn

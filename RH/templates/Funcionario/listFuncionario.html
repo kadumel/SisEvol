@@ -223,6 +223,17 @@
       </div>
       <div class="col-md-2">
         <div class="filter-group">
+          <label class="form-label">Operação</label>
+          <select class="custom-select" name="operacao" onchange="this.form.submit()">
+            <option value="">Todos</option>
+            {% for op in operacao %}
+            <option value="{{ op.id }}" {% if filtros.operacao|default_if_none:''|stringformat:"s" == op.id|stringformat:"s" %}selected{% endif %}>{{ op.operacao }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="filter-group">
           <label class="form-label">Lotação</label>
           <select class="custom-select" name="lotacao" onchange="this.form.submit()">
             <option value="">Todos</option>
@@ -284,6 +295,7 @@
       <thead>
         <tr>
           <th>Empresa</th>
+          <th>Operação</th>
           <th>Matrícula</th>
           <th>Nome</th>
           <th>Lotação</th>
@@ -300,6 +312,7 @@
         {% for func in funcionario %}
         <tr>
           <td>{{func.empresa}}</td>
+          <td>{% if func.empresa.operacao %}{{ func.empresa.operacao.operacao }}{% else %}-{% endif %}</td>
           <td>{{func.matricula}}</td>
           <td>{{func.nome}}</td>
           <td>{{func.lotacao}}</td>
@@ -452,11 +465,12 @@ $("#downloadExcel").click(function(e){
     var lotacao = $("select[name='lotacao']").val() || 'Todos'
     var cargo  = $("select[name='cargo']").val() || 'Todos'
     var status  = $("select[name='status']").val() || 'Todos'
+    var operacao  = $("select[name='operacao']").val() || 'Todos'
     
     $.ajax({
         type: 'POST',
         url: url,
-        data: {"emp": empresa, "lot": lotacao, "car":cargo, "stt": status,  csrfmiddlewaretoken: '{{ csrf_token }}'},
+        data: {"emp": empresa, "lot": lotacao, "car":cargo, "stt": status, "ope": operacao, csrfmiddlewaretoken: '{{ csrf_token }}'},
         xhrFields: {
           responseType: "arraybuffer" // Configura para receber os dados como binário
         },

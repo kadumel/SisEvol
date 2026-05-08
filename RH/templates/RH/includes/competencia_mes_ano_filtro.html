@@ -1,0 +1,23 @@
+{# Selects nomeados (competencia_mes / competencia_ano): sempre enviados no GET — indicadores usam a competência correta #}
+<div class="col-md-2">
+  <label class="form-label">Competência</label>
+  <div class="row g-2">
+    <div class="col-7">
+      <select name="competencia_mes" class="form-select form-select-sm" onchange="this.form.submit()" title="Mês" aria-label="Mês da competência">
+        {% for valor, nome in meses_competencia %}
+        <option value="{{ valor }}" {% if competencia_mes == valor %}selected{% endif %}>{{ nome }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-5">
+      <select name="competencia_ano" class="form-select form-select-sm" onchange="this.form.submit()" title="Ano" aria-label="Ano da competência">
+        {% for y in anos_competencia %}
+        <option value="{{ y }}" {% if competencia_ano == y %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  {% if competencia_ajuda %}
+  <small class="text-muted d-block mt-1">{{ competencia_ajuda }}</small>
+  {% endif %}
+</div>

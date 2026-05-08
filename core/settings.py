@@ -105,13 +105,13 @@ DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE'),
         'NAME': os.getenv('DB_NAME'),
-        'USER': os.getenv('DB_USER'),
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': os.getenv('DB_HOST'),
-        'PORT': os.getenv('DB_PORT'),
+        'USER': "",
+        'PASSWORD': "",
+        'HOST': "",
+        'PORT': "",
         'OPTIONS': {
-            'driver': os.getenv('DB_DRIVER'),
-            'isolation_level': os.getenv('DB_ISOLATION_LEVEL')
+            'dsn': 'SisEvolDB',
+            'driver': os.getenv('DB_DRIVER')
         }
     }
 }

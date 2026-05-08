@@ -1,11 +1,21 @@
 from django.contrib import admin
-from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta, EncerramentoOrcamento
+from .models import Dre, Conta, Orcamento, Lancamento, Dfc, Banco, Conta_Financeira, CentroCusto, ConfigGeral, Fornecedor, reponsavel_conta, EncerramentoOrcamento, Feriado
 from django.contrib.admin.filters import SimpleListFilter
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from .admin_mixins import DateHierarchyCurrentMonthMixin
 from django import forms
+import calendar
 # Register your models here.
+
+@admin.register(Feriado)
+class FeriadoAdmin(admin.ModelAdmin):
+    list_display = ['data', 'descricao']
+    list_filter = ['data']
+    search_fields = ['descricao']
+    date_hierarchy = 'data'
+    ordering = ['data']
+
 
 @admin.register(EncerramentoOrcamento)
 class EncerramentoOrcamentoAdmin(admin.ModelAdmin):
@@ -100,8 +110,11 @@ class filterMesOrc(admin.SimpleListFilter):
     parameter_name = 'mes'
     
     def lookups(self, request, model_admin):
-        lista = Conta.objects.raw("select distinct mesNumero id, mes nome from SISEVOL..Gestao_orcamento o join dw_bi..DimData d on d.data = o.data order by 1") 
-        return [(x.id, x.nome ) for x in lista]
+        """
+        Retorna sempre os 12 meses (não precisa bater no banco).
+        O filtro já usa data__month, então funciona independente do ano.
+        """
+        return [(i, calendar.month_name[i]) for i in range(1, 13)]
     
     def queryset(self, request, queryset):
         if self.value():   
@@ -114,8 +127,12 @@ class filterAnoOrc(admin.SimpleListFilter):
     parameter_name = 'ano'
     
     def lookups(self, request, model_admin):
-        lista = Conta.objects.raw("select distinct ano id, ano nome from SISEVOL..Gestao_orcamento o join dw_bi..DimData d on d.data = o.data order by 1") 
-        return [(x.id, x.nome ) for x in lista]
+        """
+        Busca apenas os anos que realmente existem na tabela de orçamento,
+        usando o ORM (dates) que já faz DISTINCT de forma eficiente.
+        """
+        anos = Orcamento.objects.dates('data', 'year', order='ASC')
+        return [(d.year, d.year) for d in anos]
     
     def queryset(self, request, queryset):
         if self.value():   
@@ -295,8 +312,11 @@ class filterMesLan(admin.SimpleListFilter):
     parameter_name = 'mes'
     
     def lookups(self, request, model_admin):
-        lista = Conta.objects.raw("select distinct mesNumero id, mes nome from SISEVOL..Gestao_lancamento o join dw_bi..DimData d on d.data = o.data order by 1") 
-        return [(x.id, x.nome ) for x in lista]
+        """
+        Retorna sempre os 12 meses (não precisa bater no banco).
+        O filtro já usa data__month, então funciona independente do ano.
+        """
+        return [(i, calendar.month_name[i]) for i in range(1, 13)]
     
     def queryset(self, request, queryset):
         if self.value():   
@@ -309,8 +329,12 @@ class filterAnoLan(admin.SimpleListFilter):
     parameter_name = 'ano'
     
     def lookups(self, request, model_admin):
-        lista = Conta.objects.raw("select distinct ano id, ano nome from SISEVOL..Gestao_lancamento o join dw_bi..DimData d on d.data = o.data order by 1") 
-        return [(x.id, x.nome ) for x in lista]
+        """
+        Busca apenas os anos que realmente existem na tabela de lançamentos,
+        usando o ORM (dates) que já faz DISTINCT de forma eficiente.
+        """
+        anos = Lancamento.objects.dates('data', 'year', order='ASC')
+        return [(d.year, d.year) for d in anos]
     
     def queryset(self, request, queryset):
         if self.value():   
@@ -447,3 +471,6 @@ class reponsavel_contaAdmin(admin.ModelAdmin):
     list_display_links = ['empresa','conta']
     list_select_related = ['empresa','conta','responsavel']
     list_filter = ['empresa','conta','responsavel']
+
+
+

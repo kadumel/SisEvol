@@ -1,4 +1,4 @@
-{% load static %}
+{% load static group_tags %}
 <!DOCTYPE html>
 <html lang="pt-Br">
 
@@ -523,7 +523,7 @@
             <span>Dashboard</span>
           </a>
         </li>
-
+        {% if not user|has_group:"bi" %}
         <li class="nav-item">
           <a class="nav-link" data-bs-toggle="collapse" href="#rhMenu" role="button" aria-expanded="false" aria-controls="rhMenu">
             <i class="bi bi-people-fill"></i>
@@ -604,7 +604,7 @@
             </div>
           </div>
         </li>
-
+        {% endif %}
       </ul>
     </nav>
   </aside>
