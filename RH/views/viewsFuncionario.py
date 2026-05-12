@@ -175,10 +175,13 @@ class EditFuncionarioView(LoginRequiredMixin, View):
         funcionario.dt_segundo_termino = funcionario.dt_segundo_termino.strftime('%Y-%m-%d') if funcionario.dt_segundo_termino else None
         funcionario.dt_integracao = funcionario.dt_integracao.strftime('%Y-%m-%d') if funcionario.dt_integracao else None
         
+        config = ConfigGeral.objects.all().values('empresa', 'dias_primeiro_termino_exp', 'dias_segundo_termino_exp')
+        
         form = FuncionarioForm(instance=funcionario)
         context = {
             'form': form,
             'funcionario': funcionario,
+            'configGeral': config,
         }
         return render(request, self.template_name, context)
 

@@ -547,10 +547,15 @@ function getCookie(name) {
 // Configurações gerais da empresa
   var configGeral = "{{ configGeral|safe}}"
   console.log(configGeral)
-  configGeral = configGeral.replace('<QuerySet ','')
-  configGeral = configGeral.replace('>','')
-  configGeral = configGeral.replaceAll("'","\"")
-  configGeral = JSON.parse(configGeral)
+  try {
+    configGeral = configGeral.replace('<QuerySet ','')
+    configGeral = configGeral.replace('>','')
+    configGeral = configGeral.replaceAll("'","\"")
+    configGeral = configGeral ? JSON.parse(configGeral) : []
+  } catch (e) {
+    console.warn('Não foi possível interpretar configGeral:', e)
+    configGeral = []
+  }
 
 $(document).ready(function() {
     let allCities = [];

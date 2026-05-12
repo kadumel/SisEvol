@@ -1,6 +1,6 @@
 from django.contrib import admin
+from django_q.tasks import async_task
 from .models import Acesso, Link, Tarefa
-from links.tasks import somar, executar_job_pentaho
 from datetime import datetime
 # Register your models here.
 
@@ -28,7 +28,7 @@ def ExecutarTarefa(ModelAdmin, request, queryset):
         i.inicio = datetime.now()
         i.fim = None
         i.save()
-        executar_job_pentaho.delay(i.id, i.path)
+        async_task('links.tasks.executar_job_pentaho', i.id, i.path)
 
     
 ExecutarTarefa.short_description = 'Executar Tarefas !!!'

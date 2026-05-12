@@ -53,7 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'widget_tweaks',
-    'django_celery_results',
+    'django_q',
     'RH',
     'links',
     'PerfilMenus',
@@ -136,11 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 
-# # Configuração do Celery
-# CELERY_BROKER_URL = "redis://localhost:6379/0"
-# CELERY_ACCEPT_CONTENT = ["json"]
-# CELERY_TASK_SERIALIZER = "json"
-
 # INSTALLED_APPS += ["channels"]
 # ASGI_APPLICATION = "projeto.asgi.application"
 # CHANNEL_LAYERS = {
@@ -199,11 +194,24 @@ MESSAGE_TAGS = {
 
 #ambiente teste local 
 
-# Celery Configurations
-CELERY_BROKER_URL = os.getenv('CELERY_BROKER_URL')
-CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND')
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
+# Django-Q2 (background tasks) — broker via ORM (usa o banco padrão do Django)
+# Para iniciar o worker:  python manage.py qcluster
+# Agendar relatório tracking: Admin → Django Q → Scheduled tasks → func
+# RH.tasks_tracking.enviar_relatorio_tracking_precos (cluster = SisEvol)
+Q_CLUSTER = {
+    'name': 'SisEvol',
+    'workers': 4,
+    'recycle': 500,
+    'timeout': 60 * 30,   # 30 min — suficiente para jobs Pentaho
+    'retry': 60 * 60,     # 1 hora (deve ser maior que o timeout)
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',     # usa o DB padrão (SQL Server)
+    'catch_up': False,
+    'compress': True,
+    'save_limit': 250,
+    'label': 'Django Q',
+}
 
 # Jazzmin Configuration
 JAZZMIN_SETTINGS = {

@@ -59,6 +59,7 @@ class Operacao(models.Model):
 
 class Empresa(models.Model):
     codigo_BI = models.IntegerField()
+    empresa_raiz = models.IntegerField(null=True, blank=True)
     empresa = models.CharField(max_length=100, blank=False, null=False)
     created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     updated = models.DateTimeField(auto_now=True, null=True, blank=True)
@@ -66,6 +67,38 @@ class Empresa(models.Model):
     
     def __str__(self):
         return f"{self.empresa}"
+
+
+class EmailRelatorio(models.Model):
+    """Destinatários do relatório de tracking por empresa (não ligados a funcionário)."""
+    empresa = models.ForeignKey(
+        Empresa,
+        on_delete=models.CASCADE,
+        related_name="emails_relatorio",
+        verbose_name="Empresa",
+    )
+    email_empresa = models.CharField("E-mail", max_length=100)
+    relatorio_tracking = models.CharField(
+        "Receber relatório tracking",
+        max_length=1,
+        choices=YES_NO_CHOICE,
+        default="N",
+    )
+    created = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "E-mail relatório tracking"
+        verbose_name_plural = "E-mails relatório tracking"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empresa", "email_empresa"],
+                name="rh_emailrelatorio_empresa_email_uq",
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.email_empresa} — {self.empresa}"
     
 class Lotacao(models.Model):
     lotacao = models.CharField(max_length=100, blank=False, null=False)

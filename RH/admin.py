@@ -1,5 +1,24 @@
 from django.contrib import admin
-from .models import Cargo, Empresa, TipoContrato, Banco, Lotacao, Turno, Vaga, Funcionario, Gestor, ConfigGeral, Auditoria, TipoEvento, Evento, ControleEvento, DiaEvento, FrequenciaEvento, Operacao
+from .models import (
+    Cargo,
+    Empresa,
+    TipoContrato,
+    Banco,
+    Lotacao,
+    Turno,
+    Vaga,
+    Funcionario,
+    Gestor,
+    ConfigGeral,
+    Auditoria,
+    TipoEvento,
+    Evento,
+    ControleEvento,
+    DiaEvento,
+    FrequenciaEvento,
+    Operacao,
+    EmailRelatorio,
+)
 from .admin_mixins import DateHierarchyCurrentMonthMixin
 
 # Register your models here.
@@ -12,6 +31,15 @@ class ConfigGeralAdmin(admin.ModelAdmin):
 class EmpresaAdmin(admin.ModelAdmin):
     list_display = ['codigo_BI','empresa','operacao']
     list_editable = ['operacao']
+    search_fields = ('empresa', 'codigo_BI')
+
+
+@admin.register(EmailRelatorio)
+class EmailRelatorioAdmin(admin.ModelAdmin):
+    list_display = ('empresa', 'email_empresa', 'relatorio_tracking')
+    list_filter = ('relatorio_tracking', 'empresa')
+    search_fields = ('email_empresa', 'empresa__empresa', 'empresa__codigo_BI')
+    autocomplete_fields = ('empresa',)
 
 @admin.register(Operacao)
 class OperacaoAdmin(admin.ModelAdmin):
