@@ -196,6 +196,8 @@ MESSAGE_TAGS = {
 
 # Django-Q2 (background tasks) — broker via ORM (usa o banco padrão do Django)
 # Para iniciar o worker:  python manage.py qcluster
+# Agendar relatório tracking: Admin → Django Q → Scheduled tasks → func
+# RH.tasks_tracking.enviar_relatorio_tracking_precos (cluster = SisEvol)
 Q_CLUSTER = {
     'name': 'SisEvol',
     'workers': 4,
