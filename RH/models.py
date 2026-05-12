@@ -142,6 +142,8 @@ class Funcionario(models.Model):
     dt_aso_periodico = models.DateField('Data ASO Periódico', null=True, blank=True)
     fone_fixo = models.CharField('Fone Fixo',max_length=20, null=True, blank=True)
     fone_celular = models.CharField('Fone Celular',max_length=20, null=True, blank=True)
+    email_empresa = models.CharField('E-mail Empresa', max_length=100, null=True, blank=True)
+    relatorio_tracking = models.CharField('Receber Relatório Tracking', max_length=1, choices=YES_NO_CHOICE, default='N', null=True, blank=True)
     folga = models.ForeignKey('Folga', Folga, null=True, blank=True)
     plano_saude_titular = models.CharField('Plano de Saúde Titular',max_length=1,choices=YES_NO_CHOICE, null=True, blank=True)
     plano_saude_dependente = models.CharField('Plano de Saúde Dependente',max_length=1,choices=YES_NO_CHOICE, null=True, blank=True)

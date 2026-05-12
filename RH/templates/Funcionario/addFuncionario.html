@@ -217,6 +217,20 @@
             </div>
           </div>
         </div>
+        <div class="row mt-3">
+          <div class="col-md-8">
+            <div class="form-group">
+              <label class="form-label">E-mail Empresa</label>
+              {% render_field form.email_empresa class="form-control modern-input" type="email" %}
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="form-group">
+              <label class="form-label">Receber Relatório Tracking</label>
+              {% render_field form.relatorio_tracking class="form-control modern-input" %}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -547,10 +561,15 @@ function getCookie(name) {
 // Configurações gerais da empresa
   var configGeral = "{{ configGeral|safe}}"
   console.log(configGeral)
-  configGeral = configGeral.replace('<QuerySet ','')
-  configGeral = configGeral.replace('>','')
-  configGeral = configGeral.replaceAll("'","\"")
-  configGeral = JSON.parse(configGeral)
+  try {
+    configGeral = configGeral.replace('<QuerySet ','')
+    configGeral = configGeral.replace('>','')
+    configGeral = configGeral.replaceAll("'","\"")
+    configGeral = configGeral ? JSON.parse(configGeral) : []
+  } catch (e) {
+    console.warn('Não foi possível interpretar configGeral:', e)
+    configGeral = []
+  }
 
 $(document).ready(function() {
     let allCities = [];
