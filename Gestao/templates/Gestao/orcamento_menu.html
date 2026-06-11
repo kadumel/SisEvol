@@ -43,7 +43,7 @@
           </div>
           <h5 class="card-title">{{ item.title }}</h5>
           <p class="card-text text-muted">{{ item.description }}</p>
-          <a href="{% if item.url == 'orcamento_visualizacao' %}{% url 'gestao:orcamento_visualizacao' %}{% elif item.url == 'admin:Gestao_orcamento_changelist' %}{% url 'admin:Gestao_orcamento_changelist' %}{% else %}{{ item.url }}{% endif %}" 
+          <a href="{% if item.url == 'orcamento_visualizacao' %}{% url 'gestao:orcamento_visualizacao' %}{% elif item.url == 'dre_orcado' %}{% url 'gestao:dre_orcado' %}{% elif item.url == 'orcamento_importar_xlsx' %}{% url 'gestao:orcamento_importar_xlsx' %}{% elif item.url == 'admin:Gestao_orcamento_changelist' %}{% url 'admin:Gestao_orcamento_changelist' %}{% else %}{{ item.url }}{% endif %}" 
              class="btn btn-{{ item.color }}">
             Acessar
           </a>

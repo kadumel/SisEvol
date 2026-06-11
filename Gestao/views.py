@@ -4,17 +4,21 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib import messages
 from django.views.generic import View
 from django.db.models import Q, Sum
+from django.db import connection, transaction
 from datetime import datetime, date
 from dateutil.relativedelta import relativedelta
 import json
-from .models import Orcamento, Conta, CentroCusto, Dre, EncerramentoOrcamento
+import re
+import unicodedata
+from .models import Orcamento, Conta, CentroCusto, Dre, EncerramentoOrcamento, ConfigGeral
 from RH.models import Empresa
-from django.db import connection
 from PerfilMenus.views import AcessoAcoes
-from openpyxl import Workbook
+from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils.datetime import from_excel
 
 # Create your views here.
 
@@ -438,6 +442,13 @@ class OrcamentoMenuView(LoginRequiredMixin, View):
                     'icon': 'bi bi-gear',
                     'url': 'admin:Gestao_orcamento_changelist',
                     'color': 'info'
+                },
+                {
+                    'title': 'Importar XLSX',
+                    'description': 'Importe orçamentos a partir de planilha Excel',
+                    'icon': 'bi bi-file-earmark-arrow-up',
+                    'url': 'orcamento_importar_xlsx',
+                    'color': 'success'
                 },
             ]
         }
@@ -1402,3 +1413,293 @@ class ExportOrcamentoExcelView(LoginRequiredMixin, View):
                 'status': 'error', 
                 'message': f'Erro ao gerar arquivo Excel: {str(e)}'
             }, status=500)
+
+
+def _normalizar_cabecalho(valor):
+    if valor is None:
+        return ''
+    texto = str(valor).strip().lower()
+    texto = ''.join(
+        c for c in unicodedata.normalize('NFD', texto)
+        if unicodedata.category(c) != 'Mn'
+    )
+    return re.sub(r'\s+', ' ', texto)
+
+
+def _mapear_colunas_orcamento(cabecalhos):
+    mapeamento = {}
+    aliases = {
+        'empresa': 'empresa',
+        'codigo empresa': 'empresa',
+        'cod empresa': 'empresa',
+        'cd empresa': 'empresa',
+        'data': 'data',
+        'cod. plano de contas': 'conta',
+        'cod plano de contas': 'conta',
+        'codigo plano de contas': 'conta',
+        'plano de contas': 'conta',
+        'conta': 'conta',
+        'valor': 'valor',
+    }
+    for indice, cabecalho in enumerate(cabecalhos, start=1):
+        chave = _normalizar_cabecalho(cabecalho)
+        campo = aliases.get(chave)
+        if campo and campo not in mapeamento:
+            mapeamento[campo] = indice
+    return mapeamento
+
+
+def _parse_data_celula(valor):
+    if valor is None or valor == '':
+        return None
+    if isinstance(valor, datetime):
+        return valor.date()
+    if isinstance(valor, date):
+        return valor
+    if isinstance(valor, (int, float)):
+        return from_excel(valor).date()
+
+    texto = str(valor).strip()
+    for formato in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%m/%Y', '%Y-%m'):
+        try:
+            data_parseada = datetime.strptime(texto, formato).date()
+            if formato in ('%m/%Y', '%Y-%m'):
+                return data_parseada.replace(day=1)
+            return data_parseada
+        except ValueError:
+            continue
+    return None
+
+
+def _parse_valor_celula(valor):
+    if valor is None or valor == '':
+        return None
+    if isinstance(valor, (int, float)):
+        return float(valor)
+
+    texto = str(valor).strip()
+    if not texto:
+        return None
+    if ',' in texto and '.' in texto:
+        texto = texto.replace('.', '').replace(',', '.')
+    elif ',' in texto:
+        texto = texto.replace(',', '.')
+    return float(texto)
+
+
+def _carregar_percentuais_cenario():
+    try:
+        conf_pessimista = float(ConfigGeral.objects.get(parametro='PERCENTUAL_PESSIMISTA').valor) / 100
+        conf_otimista = float(ConfigGeral.objects.get(parametro='PERCENTUAL_OTIMISTA').valor) / 100
+        return conf_pessimista, conf_otimista
+    except (ConfigGeral.DoesNotExist, ValueError, TypeError):
+        return 0.20, 0.20
+
+
+def _aplicar_cenario_orcamento(orcamento):
+    if orcamento.conta.cenario and orcamento.valor and orcamento.valor > 0:
+        conf_pessimista, conf_otimista = _carregar_percentuais_cenario()
+        orcamento.pessimista = orcamento.valor - (abs(orcamento.valor) * conf_pessimista)
+        orcamento.otimista = orcamento.valor + (abs(orcamento.valor) * conf_otimista)
+
+
+class DownloadModeloOrcamentoXlsxView(LoginRequiredMixin, View):
+    """Download do layout Base_Zero_Par_Sul.xlsx"""
+
+    def get(self, request, *args, **kwargs):
+        acesso = AcessoAcoes(request, 'Gestao Orçamento', 'Orçamento')
+        if not acesso:
+            return render(request, 'Forbidden.html')
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Base Zero'
+
+        cabecalhos = ['Empresa', 'Data', 'Cod. Plano de Contas', 'Valor']
+        for coluna, titulo in enumerate(cabecalhos, start=1):
+            celula = ws.cell(row=1, column=coluna, value=titulo)
+            celula.font = Font(bold=True, color='FFFFFF')
+            celula.fill = PatternFill(start_color='366092', end_color='366092', fill_type='solid')
+            celula.alignment = Alignment(horizontal='center')
+
+        ws.column_dimensions['A'].width = 12
+        ws.column_dimensions['B'].width = 14
+        ws.column_dimensions['C'].width = 22
+        ws.column_dimensions['D'].width = 16
+
+        ws.cell(row=2, column=1, value=1)
+        ws.cell(row=2, column=2, value=date(2026, 1, 1))
+        ws.cell(row=2, column=3, value='20202')
+        ws.cell(row=2, column=4, value=1000.00)
+
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="Base_Zero_Par_Sul.xlsx"'
+        wb.save(response)
+        return response
+
+
+class ImportarOrcamentoXlsxView(LoginRequiredMixin, View):
+    """Importa planilha Excel para gestao_orcamento"""
+    template_name = 'Gestao/orcamento_importar_xlsx.html'
+
+    def get(self, request, *args, **kwargs):
+        acesso = AcessoAcoes(request, 'Gestao Orçamento', 'Orçamento')
+        if not acesso:
+            return render(request, 'Forbidden.html')
+
+        return render(request, self.template_name, {
+            'title': 'Importar Orçamento XLSX',
+        })
+
+    def post(self, request, *args, **kwargs):
+        acesso = AcessoAcoes(request, 'Gestao Orçamento', 'Orçamento')
+        if not acesso:
+            return render(request, 'Forbidden.html')
+
+        arquivo = request.FILES.get('arquivo')
+        if not arquivo:
+            messages.error(request, 'Selecione um arquivo XLSX para importar.')
+            return render(request, self.template_name, {'title': 'Importar Orçamento XLSX'})
+
+        if not arquivo.name.lower().endswith('.xlsx'):
+            messages.error(request, 'O arquivo deve estar no formato .xlsx.')
+            return render(request, self.template_name, {'title': 'Importar Orçamento XLSX'})
+
+        try:
+            resultado = self._processar_arquivo(arquivo)
+        except Exception as exc:
+            messages.error(request, f'Erro ao processar o arquivo: {exc}')
+            return render(request, self.template_name, {'title': 'Importar Orçamento XLSX'})
+
+        if resultado['importados'] > 0:
+            messages.success(
+                request,
+                f"Importação concluída: {resultado['importados']} registro(s) processado(s) "
+                f"({resultado['criados']} criado(s), {resultado['atualizados']} atualizado(s))."
+            )
+        elif not resultado['erros']:
+            messages.warning(request, 'Nenhum registro encontrado na planilha.')
+        else:
+            messages.error(request, 'Nenhum registro importado. Verifique os erros abaixo.')
+
+        return render(request, self.template_name, {
+            'title': 'Importar Orçamento XLSX',
+            'resultado': resultado,
+        })
+
+    def _processar_arquivo(self, arquivo):
+        wb = load_workbook(arquivo, data_only=True)
+        ws = wb.active
+
+        linhas = list(ws.iter_rows(values_only=True))
+        if not linhas:
+            return {'importados': 0, 'criados': 0, 'atualizados': 0, 'erros': ['Planilha vazia.']}
+
+        colunas = _mapear_colunas_orcamento(linhas[0])
+        campos_obrigatorios = {'empresa', 'data', 'conta', 'valor'}
+        if not campos_obrigatorios.issubset(colunas):
+            faltando = ', '.join(sorted(campos_obrigatorios - set(colunas)))
+            return {
+                'importados': 0,
+                'criados': 0,
+                'atualizados': 0,
+                'erros': [f'Cabeçalhos obrigatórios não encontrados: {faltando}.'],
+            }
+
+        empresas_por_bi = {empresa.codigo_BI: empresa for empresa in Empresa.objects.all()}
+        contas_por_codigo = {
+            conta.codigo.replace('.', ''): conta
+            for conta in Conta.objects.all()
+        }
+        meses_encerrados = {
+            (encerramento.data.year, encerramento.data.month)
+            for encerramento in EncerramentoOrcamento.objects.all()
+        }
+        centro_custo_padrao = CentroCusto.objects.order_by('id').first()
+        if not centro_custo_padrao:
+            return {
+                'importados': 0,
+                'criados': 0,
+                'atualizados': 0,
+                'erros': ['Nenhum centro de resultado cadastrado em gestao_centrocusto.'],
+            }
+
+        criados = 0
+        atualizados = 0
+        erros = []
+
+        with transaction.atomic():
+            for numero_linha, linha in enumerate(linhas[1:], start=2):
+                if not linha or all(celula is None or str(celula).strip() == '' for celula in linha):
+                    continue
+
+                try:
+                    codigo_bi = linha[colunas['empresa'] - 1]
+                    data_valor = _parse_data_celula(linha[colunas['data'] - 1])
+                    codigo_conta = linha[colunas['conta'] - 1]
+                    valor = _parse_valor_celula(linha[colunas['valor'] - 1])
+
+                    if codigo_bi is None or str(codigo_bi).strip() == '':
+                        raise ValueError('Empresa não informada.')
+                    if data_valor is None:
+                        raise ValueError('Data inválida ou não informada.')
+                    if codigo_conta is None or str(codigo_conta).strip() == '':
+                        raise ValueError('Código do plano de contas não informado.')
+                    if valor is None:
+                        raise ValueError('Valor inválido ou não informado.')
+
+                    codigo_bi = int(str(codigo_bi).strip())
+                    codigo_conta_sem_ponto = str(codigo_conta).strip().replace('.', '')
+
+                    empresa = empresas_por_bi.get(codigo_bi)
+                    if not empresa:
+                        raise ValueError(f'Empresa com código BI {codigo_bi} não encontrada.')
+
+                    conta = contas_por_codigo.get(codigo_conta_sem_ponto)
+                    if not conta:
+                        raise ValueError(
+                            f'Plano de contas "{codigo_conta}" não encontrado em gestao_conta.'
+                        )
+
+                    if (data_valor.year, data_valor.month) in meses_encerrados:
+                        raise ValueError(
+                            f'Orçamento encerrado para {data_valor.strftime("%m/%Y")}.'
+                        )
+
+                    orcamentos_existentes = Orcamento.objects.filter(
+                        empresa=empresa,
+                        conta=conta,
+                        data__year=data_valor.year,
+                        data__month=data_valor.month,
+                    ).order_by('id')
+
+                    if orcamentos_existentes.exists():
+                        orcamento = orcamentos_existentes.first()
+                        orcamento.valor = valor
+                        _aplicar_cenario_orcamento(orcamento)
+                        orcamento.save()
+                        orcamentos_existentes.exclude(id=orcamento.id).delete()
+                        atualizados += 1
+                    else:
+                        orcamento = Orcamento.objects.create(
+                            empresa=empresa,
+                            data=data_valor,
+                            conta=conta,
+                            centro_custo=centro_custo_padrao,
+                            valor=valor,
+                        )
+                        _aplicar_cenario_orcamento(orcamento)
+                        orcamento.save()
+                        criados += 1
+
+                except Exception as exc:
+                    erros.append(f'Linha {numero_linha}: {exc}')
+
+        return {
+            'importados': criados + atualizados,
+            'criados': criados,
+            'atualizados': atualizados,
+            'erros': erros,
+        }
