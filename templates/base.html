@@ -601,6 +601,10 @@
                 <i class="bi bi-graph-up"></i>
                 <span>DRE Orçado</span>
               </a>
+              <a href="{% url 'gestao:orcamento_importar_xlsx' %}" class="submenu-link {% if request.resolver_match.url_name == 'orcamento_importar_xlsx' %}active{% endif %}">
+                <i class="bi bi-file-earmark-arrow-up"></i>
+                <span>Importar XLSX</span>
+              </a>
             </div>
           </div>
         </li>
