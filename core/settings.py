@@ -36,9 +36,12 @@ ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS').split(',') if os.getenv('ALLOWED_HOST
 
 
 CORS_ALLOWED_ORIGINS = [
-    "http://127.0.0.1:8000", "http://192.168.0.5:9090","http://138.36.2.254:9090"
+    "http://127.0.0.1:8000", "http://192.168.0.5:9090","http://138.36.2.254:9090", "https://evol.kdmsolucoes.com.br"
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://evol.kdmsolucoes.com.br",
+]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # Application definition
