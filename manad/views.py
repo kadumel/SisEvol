@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib import messages
 from django.utils import timezone
 from datetime import datetime
+from PerfilMenus.views import AcessoAcoes
 from .models import (
     ImportacaoManad, ManadCabecalho, ManadEmpresa, ManadFuncionario,
     ManadLotacao, ManadEventoFolha, ManadDadosLaborais, ManadLancamentoFolha
@@ -13,6 +14,12 @@ from RH.models import Empresa, Funcionario, Cargo, Lotacao
 class IndexManadView(LoginRequiredMixin, TemplateView):
     """View principal do módulo MANAD"""
     template_name = 'manad/index.html'
+
+    def get(self, request, *args, **kwargs):
+        acesso = AcessoAcoes(request, 'MANAD', 'Listar')
+        if acesso == False:
+            return render(request, 'Forbidden.html')
+        return super().get(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -28,6 +35,12 @@ class ListImportacoesView(LoginRequiredMixin, ListView):
     template_name = 'manad/list_importacoes.html'
     context_object_name = 'importacoes'
     paginate_by = 20
+
+    def get(self, request, *args, **kwargs):
+        acesso = AcessoAcoes(request, 'MANAD', 'Listar')
+        if acesso == False:
+            return render(request, 'Forbidden.html')
+        return super().get(request, *args, **kwargs)
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -40,12 +53,20 @@ class ImportarManadView(LoginRequiredMixin, View):
     template_name = 'manad/importar.html'
     
     def get(self, request):
+        acesso = AcessoAcoes(request, 'MANAD', 'Inserir')
+        if acesso == False:
+            return render(request, 'Forbidden.html')
+
         context = {
             'title': 'Importar Arquivo MANAD'
         }
         return render(request, self.template_name, context)
     
     def post(self, request):
+        acesso = AcessoAcoes(request, 'MANAD', 'Inserir')
+        if acesso == False:
+            return render(request, 'Forbidden.html')
+
         try:
             arquivo = request.FILES.get('arquivo')
             if not arquivo:
