@@ -189,14 +189,14 @@ class ContaAdmin(admin.ModelAdmin):
     dre_nome.admin_order_field = 'dre'  # Permite ordenar pela chave estrangeira
     
     # fields = ['codigo', 'nome', 'solucao',  'dre_nome', 'analitica', 'natureza']
-    list_display = ['codigo','nome', 'nivel','solucao', 'mae', 'dre','dfc', 'nivel_dre', 'analitica', 'natureza', 'operacao']
+    list_display = ['codigo','nome', 'nivel','solucao', 'mae', 'dre','dfc', 'nivel_dre', 'analitica', 'natureza', 'operacao','ordem']
     actions = [limparConfDre]
     list_filter = ('nivel','analitica','natureza',filterDre,  filterNivel1Conta)
     ordering = ('ordem',)
     search_fields = ('nome','codigo') 
-        
+    list_editable = ('ordem',)
     fieldsets = (
-        (None, {'fields': ('codigo', 'nome', 'solucao',  'dre', 'dfc', 'nivel_dre', 'analitica', 'natureza', 'operacao', 'cenario')}),
+        (None, {'fields': ('codigo', 'nome', 'solucao',  'dre', 'dfc', 'nivel_dre', 'analitica', 'natureza', 'operacao', 'cenario', 'ordem')}),
     )
     
     
