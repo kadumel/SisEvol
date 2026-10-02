@@ -548,8 +548,33 @@ class DreOrcadoView(LoginRequiredMixin, View):
             filtro_param = f"%{filtro_livre}%"
             params.extend([filtro_param, filtro_param, filtro_param, filtro_param])
         
+        # Ordena pela ordem cadastral das contas em cada nível hierárquico
         sql += """
-        order by d.nivel, nivel1, nivel2, nivel3, eomonth(o.data)
+        order by
+            d.nivel,
+            case
+                when c.nivel = 1 then c.ordem
+                when c.nivel = 2 then (select ordem from SISEVOL..Gestao_conta n1 where n1.id = c.mae_id)
+                when c.nivel = 3 and c.nivel_dre_id is not null then (
+                    select n2.ordem from SISEVOL..Gestao_conta n2
+                    where n2.id = (select mae_id from SISEVOL..Gestao_conta where id = c.nivel_dre_id)
+                )
+                when c.nivel = 3 then (
+                    select ordem from SISEVOL..Gestao_conta n1
+                    where n1.id = (select mae_id from SISEVOL..Gestao_conta n2 where n2.id = c.mae_id)
+                )
+            end,
+            case
+                when c.nivel in (1, 2) then c.ordem
+                when c.nivel = 3 and c.nivel_dre_id is not null then (
+                    select ordem from SISEVOL..Gestao_conta n2 where n2.id = c.nivel_dre_id
+                )
+                when c.nivel = 3 then (
+                    select ordem from SISEVOL..Gestao_conta n1 where n1.id = c.mae_id
+                )
+            end,
+            c.ordem,
+            eomonth(o.data)
         """
         
         # Executar consulta
