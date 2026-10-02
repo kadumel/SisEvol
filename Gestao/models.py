@@ -85,7 +85,9 @@ class Conta(models.Model):
     
     def save(self, *args, **kwargs):
         self.nivel = self.codigo.count('.') + 1
-        self.ordem = '0'+str(self.codigo).replace('.','')
+        # Gera ordem a partir do código apenas se estiver vazia (permite edição manual)
+        if not self.ordem:
+            self.ordem = '0' + str(self.codigo).replace('.', '')
         
         if self.nivel > 1:
             index = self.codigo.rfind('.')
